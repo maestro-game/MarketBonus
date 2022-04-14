@@ -1,0 +1,28 @@
+version: '3.8'
+
+volumes:
+  pgdata-timetable:
+
+services:
+  postgres:
+    image: postgres:10
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=qwerty007
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=timetable
+    volumes:
+      - pgdata-timetable:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  web:
+    container_name: timetable-api
+    build: ../timetable/
+    restart: always
+    env_file:
+      - ../timetable/envs/.env
+    ports:
+      - 8000:8000
+    depends_on:
+      - postgres
