@@ -3,21 +3,22 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 
-class Teacher(models.Model):
-    name = models.CharField(max_length=100, null=True, default="")
-    profile_link = models.CharField(max_length=100)
-    not_work_from = models.DateField()
-
 class University(models.Model):
     name = models.CharField(max_length=100)
     short_name = models.CharField(max_length=100, null=True, default=None)
-    link = models.CharField(max_length=300)
+    link = models.CharField(max_length=300, null=True, default=None)
 
 class Institute(models.Model):
     university = models.ForeignKey(University, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     short_name = models.CharField(max_length=100, null=True, default=None)
-    link = models.CharField(max_length=300)
+    link = models.CharField(max_length=300, null=True, default=None)
+
+class Teacher(models.Model):
+    name = models.CharField(max_length=100)
+    profile_link = models.CharField(max_length=100, null=True, default=None)
+    institute = models.ForeignKey(Institute, on_delete=models.CASCADE, null=True)
+    not_work_from = models.DateField(null=True, default=None)
 
 class Director(AbstractUser):
     institute = models.ForeignKey(Institute, on_delete=models.CASCADE, null=True)
@@ -41,7 +42,7 @@ class Block (models.Model):
     name = models.CharField(max_length=100, default="")
 
 class Subject(models.Model):
-    name = models.CharField(max_length=100, null=True, default="")
+    name = models.CharField(max_length=100)
     block = models.ForeignKey(Block, on_delete=models.CASCADE)
 
 days = (
