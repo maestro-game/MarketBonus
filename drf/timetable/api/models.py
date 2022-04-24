@@ -25,15 +25,15 @@ class Director(AbstractUser):
 
 class Group(models.Model):
     courses = (
-        (1, "1 курс балавриат"),
-        (2, "2 курс балавриат"),
-        (3, "3 курс балавриат"),
-        (4, "4 курс балавриат"),
-        (5, "1 курс магистратура"),
-        (6, "2 курс магистратура"),
+        ("1B", "1 курс балавриат"),
+        ("2B", "2 курс балавриат"),
+        ("3B", "3 курс балавриат"),
+        ("4B", "4 курс балавриат"),
+        ("1M", "1 курс магистратура"),
+        ("2M", "2 курс магистратура"),
     )
 
-    course = models.IntegerField(choices=courses, default=None)
+    course = models.CharField(choices=courses, max_length=20)
     institute = models.ForeignKey(Institute, on_delete=models.CASCADE)
     group_number = models.CharField(max_length=100)
 
@@ -46,26 +46,26 @@ class Subject(models.Model):
     block = models.ForeignKey(Block, on_delete=models.CASCADE)
 
 days = (
-    (1, "Monday"),
-    (2, "Tuesday"),
-    (3, "Wednesday"),
-    (4, "Thursday"),
-    (5, "Friday"),
-    (6, "Saturday"),
-    (7, "Sunday"),
+    ("Monday", "Monday"),
+    ("Tuesday", "Tuesday"),
+    ("Wednesday", "Wednesday"),
+    ("Thursday", "Thursday"),
+    ("Friday", "Friday"),
+    ("Saturday", "Saturday"),
+    ("Sunday", "Sunday"),
     )
 
 class Lesson(models.Model):
 
     lesson_type = (
-        (1, "Online"),
-        (2, "Offline"),
+        ("Online", "Online"),
+        ("Offline", "Offline"),
     )
 
-    day_name = models.IntegerField(choices=days)
+    day_name = models.CharField(choices=days, max_length=15)
     start_time = models.TimeField()
     end_time = models.TimeField()
-    type = models.IntegerField(choices=lesson_type)
+    type = models.CharField(choices=lesson_type, max_length=15)
     is_even_week = models.BooleanField()
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
@@ -75,17 +75,17 @@ class Lesson(models.Model):
 
 class Changes(models.Model):
     change_type = (
-        (1, "Cancel"),
-        (2, "Day_change "),
-        (3, "Time_change"),
-        (4, "Teacher_change"),
-        (5, "Format_change"),
+        ("Cancel", "Cancel"),
+        ("Day_change", "Day_change"),
+        ("Time_change", "Time_change"),
+        ("Teacher_change", "Teacher_change"),
+        ("Format_change", "Format_change"),
     )
 
     start_date = models.DateField()
     end_date = models.DateField()
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    type = models.IntegerField(choices=change_type)
-    day_change = models.IntegerField(choices=days)
+    type = models.CharField(choices=change_type, max_length=20)
+    day_change = models.CharField(choices=days, max_length=15)
     time_change = models.TimeField()
     comment = models.CharField(max_length=200)

@@ -35,10 +35,10 @@ class CreateTimeTable(APIView):
         data = request.data
         if Director.objects.filter(username=data.get('login')).exists():
             return Response("Account with this name already exist")
-        if Institute.objects.filter(short_name__iexact=data.get('institute_short_name')).exists():
+        if Institute.objects.filter(name__iexact=data.get('institute_name')).exists():
             return Response("Timetabe already exists")
-        if University.objects.filter(short_name__iexact=data.get('university_short_name')).exists():
-            univ = University.objects.get(short_name__iexact=data.get('university_short_name'))
+        if University.objects.filter(name__iexact=data.get('university_name')).exists():
+            univ = University.objects.get(name__iexact=data.get('university_name'))
             inst = Institute(university=univ, name=data.get('institute_name'), link=data.get('institute_site'),short_name=data.get('institute_short_name'))
             inst.save()
             director = Director(username=data.get('login'), first_name=data.get('name'),institute=inst)

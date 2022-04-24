@@ -10,4 +10,5 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
-        Director.objects.create_superuser(username=os.getenv('ADMIN_NAME'), password=os.getenv('ADMIN_PASSWORD'))
+        if not Director.objects.filter(username=os.getenv('ADMIN_NAME')).exists():
+            Director.objects.create_superuser(username=os.getenv('ADMIN_NAME'), password=os.getenv('ADMIN_PASSWORD'))
