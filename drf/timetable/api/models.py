@@ -23,23 +23,17 @@ class Teacher(models.Model):
 class Director(AbstractUser):
     institute = models.ForeignKey(Institute, on_delete=models.CASCADE, null=True)
 
-class Group(models.Model):
-    courses = (
-        ("1B", "1 курс балавриат"),
-        ("2B", "2 курс балавриат"),
-        ("3B", "3 курс балавриат"),
-        ("4B", "4 курс балавриат"),
-        ("1M", "1 курс магистратура"),
-        ("2M", "2 курс магистратура"),
-    )
-
-    course = models.CharField(choices=courses, max_length=20)
+class Course(models.Model):
     institute = models.ForeignKey(Institute, on_delete=models.CASCADE)
+    course_number = models.IntegerField()
+
+class Group(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
     group_number = models.CharField(max_length=100)
 
 class Block (models.Model):
-    group = models.ManyToManyField(Group, blank=True, related_name='block')
-    name = models.CharField(max_length=100, default="")
+    course = models.ForeignKey(Course, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, null=True)
 
 class Subject(models.Model):
     name = models.CharField(max_length=100)
@@ -58,19 +52,21 @@ days = (
 class Lesson(models.Model):
 
     lesson_type = (
-        ("Online", "Online"),
-        ("Offline", "Offline"),
+        ("Online practice", "Online practice"),
+        ("Offline practice", "Offline practice"),
+        ("Online lecture", "Online lecture"),
+        ("Offline lecture", "Offline lecture"),
     )
 
     day_name = models.CharField(choices=days, max_length=15)
     start_time = models.TimeField()
     end_time = models.TimeField()
-    type = models.CharField(choices=lesson_type, max_length=15)
-    is_even_week = models.BooleanField()
+    type = models.CharField(choices=lesson_type, max_length=20)
+    is_even_week = models.BooleanField(null=True)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    classroom = models.CharField(max_length=100)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    classroom = models.CharField(max_length=100, null=True, default=None)
+    group = models.ForeignKey(Group, null=True, on_delete=models.CASCADE)
     links = ArrayField(models.CharField(max_length=200), blank=True)
 
 class Changes(models.Model):

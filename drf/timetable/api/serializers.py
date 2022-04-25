@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Institute, University, Group, Block, Subject, Teacher
+from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course
 
 
 class CreateTimeTableSerializer(serializers.Serializer):
@@ -47,7 +47,7 @@ class GetBlockSerializer(serializers.ModelSerializer):
         model = Block
         fields = "__all__"
 
-class GetCourseSerializer(serializers.ModelSerializer):
+class GetDopCourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
@@ -57,13 +57,44 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ["name", "profile_link", "not_work_from"]
+        fields = ["id", "name", "profile_link", "not_work_from"]
 
 class GroupSerializer(serializers.ModelSerializer):
+    course = serializers.IntegerField()
 
     class Meta:
         model = Group
-        fields = ["group_number", "course"]
+        fields = "__all__"
+
+class BlockSerializer(serializers.ModelSerializer):
+    course_id = serializers.IntegerField()
+
+    class Meta:
+        model = Block
+        fields = ["id", "name", "course_id"]
+
+class SubjectSerializer(serializers.ModelSerializer):
+    block_id = serializers.IntegerField()
+
+    class Meta:
+        model = Subject
+        fields = ["id", "name", "block_id"]
+
+class GetTimeTableSerializer(serializers.Serializer):
+    group_id = serializers.IntegerField()
+    dop_course_id = serializers.IntegerField()
+
+class TimeTableSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Lesson
+        fields = "__all__"
+
+class CourseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Course
+        fields = "__all__"
 
 class MessageSerializer(serializers.Serializer):
     text = serializers.CharField()
