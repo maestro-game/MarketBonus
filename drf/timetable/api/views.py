@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, F
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -8,7 +8,7 @@ from .models import Institute, University, Director, Group, Subject, Teacher, Bl
 from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, GetFullInstituteSerializer, \
     GetInstituteSerializer, GetGroupSerializer, GetBlockSerializer, TeacherSerializer, \
     GroupSerializer, MessageSerializer, BlockSerializer, SubjectSerializer, GetDopCourseSerializer, \
-    GetTimeTableSerializer, TimeTableSerializer, CourseSerializer
+    GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer
 
 
 class CreateTimeTable(APIView):
@@ -248,9 +248,21 @@ class GetTimetable(APIView):
     @swagger_auto_schema(request_body=GetTimeTableSerializer(), responses={200: TimeTableSerializer(many=True), 400: MessageSerializer()})
     def post(self, request):
         review = request.data
-        if not Group.objects.filter(id = review.get("group_id")).exists() or not Subject.objects.filter(id=review.get("dop_course_id")).exists():
-            return Response({"text": "incorrect data"}, status=400)
-        serialize = Lesson.objects.filter(Q(group_id=review.get("group_id")) | Q(subject_id=review.get("dop_course_id")))
+        if not Group.objects.filter(id = review.get("group_id")).exists():
+            return Response({"text": "group does not exists"}, status=400)
+        course_id = Group.objects.get(id = review.get("group_id")).course_id
+        block_id = Block.objects.get(course_id=course_id, name=None).id
+        group_subjects = Subject.objects.filter(block_id=block_id)
+        if not review.get("dop_course_id"):
+            serialize = Lesson.objects.filter(group_id=review.get("group_id"), subject__in=group_subjects)
+            result = TimeTableSerializer(serialize, many=True).data
+            return Response(result)
+        for i in review.get("dop_course_id"):
+            if not Subject.objects.filter(id=i).exists():
+                return Response({"text": "extra course does not exists"}, status=400)
+
+        serialize = Lesson.objects.filter(Q(group_id=review.get("group_id"), subject_id__in=review.get("dop_course_id")) |
+                                          Q(group_id=review.get("group_id"), subject__in=group_subjects))
         result = TimeTableSerializer(serialize, many=True).data
         return Response(result)
 
@@ -266,4 +278,19 @@ class GetCourse(APIView):
         institute_id = request.user.institute_id
         serialize = Course.objects.filter(institute_id=institute_id)
         result = CourseSerializer(serialize, many=True).data
+        return Response(result)
+
+
+class GetAccount(APIView):
+    """
+    post:Получить данные деканата
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(responses={200: DirectorSerializer(), 400: MessageSerializer()})
+    def get(self, request):
+        institute_id = request.user.institute_id
+        serialize = Director.objects.filter(institute_id=institute_id)[0]
+        result = DirectorSerializer(serialize).data
         return Response(result)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course
+from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course, Director
 
 
 class CreateTimeTableSerializer(serializers.Serializer):
@@ -82,7 +82,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 class GetTimeTableSerializer(serializers.Serializer):
     group_id = serializers.IntegerField()
-    dop_course_id = serializers.IntegerField()
+    dop_course_id = serializers.ListField(child=serializers.IntegerField(), required=False)
 
 class TimeTableSerializer(serializers.ModelSerializer):
 
@@ -96,5 +96,14 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = "__all__"
 
+class DirectorSerializer(serializers.ModelSerializer):
+    institute = GetFullInstituteSerializer()
+
+    class Meta:
+        model = Director
+        fields = ["username", "first_name", "institute"]
+
+
 class MessageSerializer(serializers.Serializer):
     text = serializers.CharField()
+
