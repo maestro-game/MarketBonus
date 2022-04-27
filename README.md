@@ -7,11 +7,11 @@
   Web версия - сайт, предназначенный для управления расписанием, требует авторизацию (заранее созданные учётные записи администраторов/деканата)
 
 Состав команды:
-  1)Белов Вадим Вячеславович - vbelov@gradoservice.ru
-  2)Асхадуллина Диляра Марселевна - dilyra.as@gmail.com
-  3)Нургалеев Мансур Дамирович - mansur0158@gmail.com
-  4)Аскаров Булат Ильгамович - bulat2666@gmail.com
-  5)Алиханов Алишер Валерьевич - nirazunerestl3ss@gmail.com
+1)  Белов Вадим Вячеславович - vbelov@gradoservice.ru
+2)  Асхадуллина Диляра Марселевна - dilyra.as@gmail.com
+3)  Нургалеев Мансур Дамирович - mansur0158@gmail.com
+4)  Аскаров Булат Ильгамович - bulat2666@gmail.com
+5)  Алиханов Алишер Валерьевич - nirazunerestl3ss@gmail.com
 
-Android репозиторий: https://github.com/ddddi21/Timetable (ветка dev)
+Android репозиторий: https://github.com/ddddi21/Timetable (ветка dev)<br />
 Fron-end репозиторий: https://github.com/maestro-game/TimeTableWeb
