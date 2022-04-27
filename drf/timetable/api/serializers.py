@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course, Director
+from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course, Director, Changes
 
 
 class CreateTimeTableSerializer(serializers.Serializer):
@@ -102,6 +102,12 @@ class DirectorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Director
         fields = ["username", "first_name", "institute"]
+
+class ChangesSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Changes
+        fields = "__all__"
 
 
 class MessageSerializer(serializers.Serializer):

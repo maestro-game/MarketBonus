@@ -16,4 +16,5 @@ urlpatterns = [
     path("dekanat/addSubject/", views.AddSubject.as_view()),
     path("dekanat/getCourse/", views.GetCourse.as_view()),
     path("dekanat/getAccount/", views.GetAccount.as_view()),
+    path("dekanat/GetTable/", views.GetTable.as_view()),
 ]

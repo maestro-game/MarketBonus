@@ -4,11 +4,11 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Institute, University, Director, Group, Subject, Teacher, Block, Course, Lesson
+from .models import Institute, University, Director, Group, Subject, Teacher, Block, Course, Lesson, Changes
 from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, GetFullInstituteSerializer, \
     GetInstituteSerializer, GetGroupSerializer, GetBlockSerializer, TeacherSerializer, \
     GroupSerializer, MessageSerializer, BlockSerializer, SubjectSerializer, GetDopCourseSerializer, \
-    GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer
+    GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer, ChangesSerializer
 
 
 class CreateTimeTable(APIView):
@@ -294,3 +294,36 @@ class GetAccount(APIView):
         serialize = Director.objects.filter(institute_id=institute_id)[0]
         result = DirectorSerializer(serialize).data
         return Response(result)
+
+
+class GetTable(APIView):
+    """
+    post:Получить все таблицы
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    # @swagger_auto_schema(responses={200: DirectorSerializer(), 400: MessageSerializer()})
+    def get(self, request):
+        institute_id = request.user.institute_id
+        courses = Course.objects.filter(institute_id=institute_id)
+        groups = Group.objects.filter(course_id__in=courses)
+        blocks = Block.objects.filter(course_id__in=courses)
+        subjects = Subject.objects.filter(block_id__in=blocks)
+        teachers = Teacher.objects.filter(institute_id=institute_id)
+        lessons = Lesson.objects.filter(subject_id__in=subjects)
+        changes = Changes.objects.filter(lesson_id__in=lessons)
+
+        result = {"courses": CourseSerializer(courses, many=True).data,
+                  "groups": GetGroupSerializer(groups, many=True).data,
+                  "blocks": GetBlockSerializer(blocks, many=True).data,
+                  "subjects": GetDopCourseSerializer(subjects, many=True).data,
+                  "teachers": TeacherSerializer(teachers, many=True).data,
+                  "lessons": TimeTableSerializer(lessons, many=True).data,
+                  "changes": ChangesSerializer(changes, many=True).data
+                  }
+        return Response(result)
+
+
+
+
