@@ -5,23 +5,23 @@ from django.contrib.auth.models import AbstractUser
 
 class University(models.Model):
     name = models.CharField(max_length=100)
-    short_name = models.CharField(max_length=100, null=True, default=None)
-    link = models.CharField(max_length=300, null=True, default=None)
+    short_name = models.CharField(max_length=100, null=True, default=None, blank=True)
+    link = models.CharField(max_length=300, null=True, default=None, blank=True)
 
 class Institute(models.Model):
     university = models.ForeignKey(University, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    short_name = models.CharField(max_length=100, null=True, default=None)
-    link = models.CharField(max_length=300, null=True, default=None)
+    short_name = models.CharField(max_length=100, null=True, default=None, blank=True)
+    link = models.CharField(max_length=300, null=True, default=None, blank=True)
 
 class Teacher(models.Model):
     name = models.CharField(max_length=100)
-    profile_link = models.CharField(max_length=100, null=True, default=None)
+    profile_link = models.CharField(max_length=100, null=True, blank=True, default=None)
     institute = models.ForeignKey(Institute, on_delete=models.CASCADE)
-    not_work_from = models.DateField(null=True, default=None)
+    not_work_from = models.DateField(null=True, default=None, blank=True)
 
 class Director(AbstractUser):
-    institute = models.ForeignKey(Institute, on_delete=models.CASCADE, null=True)
+    institute = models.ForeignKey(Institute, on_delete=models.CASCADE, null=True, blank=True)
 
 class Course(models.Model):
     institute = models.ForeignKey(Institute, on_delete=models.CASCADE)
@@ -33,7 +33,7 @@ class Group(models.Model):
 
 class Block (models.Model):
     course = models.ForeignKey(Course, null=True, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, null=True)
+    name = models.CharField(max_length=100, null=True, blank=True)
 
 class Subject(models.Model):
     name = models.CharField(max_length=100)
@@ -91,9 +91,9 @@ class Changes(models.Model):
     end_date = models.DateField()
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     type = models.IntegerField(choices=change_type)
-    day_change = models.IntegerField(choices=days, null=True)
-    time_change_start = models.TimeField(null=True)
-    time_change_end = models.TimeField(null=True)
-    teacher_change = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True)
-    format_change = models.IntegerField(choices=lesson_type, null=True)
-    comment = models.CharField(max_length=200, null=True)
+    day_change = models.IntegerField(choices=days, null=True, blank=True)
+    time_change_start = models.TimeField(null=True, blank=True)
+    time_change_end = models.TimeField(null=True, blank=True)
+    teacher_change = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True, blank=True)
+    format_change = models.IntegerField(choices=lesson_type, null=True, blank=True)
+    comment = models.CharField(max_length=200, null=True, blank=True)
