@@ -1,6 +1,7 @@
+from django.db import models
 from rest_framework import serializers
 
-from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course, Director, Changes
+from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course, Director, Changes, days
 
 
 class CreateTimeTableSerializer(serializers.Serializer):
@@ -85,6 +86,13 @@ class GetTimeTableSerializer(serializers.Serializer):
     dop_course_id = serializers.ListField(child=serializers.IntegerField(), required=False)
 
 class TimeTableSerializer(serializers.ModelSerializer):
+    is_changed = serializers.BooleanField(required=True)
+
+    class Meta:
+        model = Lesson
+        fields = ["id", "day_name", "start_time", "end_time", "type", "is_even_week", "teacher", "subject", "classroom", "group", "links", "is_changed"]
+
+class DirectorTimeTableSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lesson
@@ -103,12 +111,23 @@ class DirectorSerializer(serializers.ModelSerializer):
         model = Director
         fields = ["username", "first_name", "institute"]
 
+
+
 class ChangesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Changes
         fields = "__all__"
 
+
+class DBSerializer(serializers.Serializer):
+    courses = CourseSerializer(many=True)
+    groups = GetGroupSerializer(many=True)
+    blocks = GetBlockSerializer(many=True)
+    subjects = GetDopCourseSerializer(many=True)
+    teachers = TeacherSerializer(many=True)
+    lessons = DirectorTimeTableSerializer(many=True)
+    changes = ChangesSerializer(many=True)
 
 class MessageSerializer(serializers.Serializer):
     text = serializers.CharField()

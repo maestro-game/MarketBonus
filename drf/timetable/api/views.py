@@ -1,4 +1,6 @@
-from django.db.models import Q, F
+from datetime import datetime
+
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -8,13 +10,16 @@ from .models import Institute, University, Director, Group, Subject, Teacher, Bl
 from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, GetFullInstituteSerializer, \
     GetInstituteSerializer, GetGroupSerializer, GetBlockSerializer, TeacherSerializer, \
     GroupSerializer, MessageSerializer, BlockSerializer, SubjectSerializer, GetDopCourseSerializer, \
-    GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer, ChangesSerializer
+    GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer, ChangesSerializer, \
+    DirectorTimeTableSerializer, DBSerializer
 
 
 class CreateTimeTable(APIView):
     """
-    get:Список зарегистрированных институтов
-    post:Зарегистрировать институт и директора
+    get:Список зарегистрированных институтов\n
+    Список зарегистрированных институтов
+    post:Зарегистрировать институт и директора\n
+    Зарегистрировать институт и директора
     """
     permission_classes = [IsAdminUser]
 
@@ -60,7 +65,8 @@ class CreateTimeTable(APIView):
 
 class GetUniversity(APIView):
     """
-    get:Список университетов
+    get:Список университетов\n
+    Список университетов
     """
 
     @swagger_auto_schema(responses={200: GetUniversitySerializer(many=True)})
@@ -71,7 +77,8 @@ class GetUniversity(APIView):
 
 class GetInstitute(APIView):
     """
-    get:Список институтов по id университета
+    get:Список институтов по id университета\n
+    Список институтов по id университета
     """
 
     @swagger_auto_schema(responses={200: GetInstituteSerializer(many=True)})
@@ -82,7 +89,8 @@ class GetInstitute(APIView):
 
 class GetGroup(APIView):
     """
-    get:Список групп по id института
+    get:Список групп по id института\n
+    Список групп по id института
     """
 
     @swagger_auto_schema(responses={200: GetGroupSerializer(many=True)})
@@ -94,7 +102,8 @@ class GetGroup(APIView):
 
 class GetBlock(APIView):
     """
-    get:Список учебных блоков по id группы
+    get:Список учебных блоков по id группы\n
+    Список учебных блоков по id группы
     """
 
     @swagger_auto_schema(responses={200: GetBlockSerializer(many=True)})
@@ -109,7 +118,8 @@ class GetBlock(APIView):
 
 class GetDopCourse(APIView):
     """
-    get:Список доп курсов по id блока
+    get:Список доп курсов по id блока\n
+    Список доп курсов по id блока
     """
 
     @swagger_auto_schema(responses={200: GetDopCourseSerializer(many=True)})
@@ -120,8 +130,10 @@ class GetDopCourse(APIView):
 
 class AddTeacher(APIView):
     """
-    get:Список всех преподавателей интитута
-    post:Добавление преподавателей в массиве
+    get:Список всех преподавателей интитута\n
+    Список всех преподавателей интитута
+    post:Добавление преподавателей в массиве\n
+    Добавление преподавателей в массиве
     """
     permission_classes = [IsAuthenticated]
 
@@ -145,8 +157,10 @@ class AddTeacher(APIView):
 
 class AddGroup(APIView):
     """
-    get:Список всех групп интитута
-    post:Добавление групп в массиве
+    get:Список всех групп интитута\n
+    Список всех групп интитута
+    post:Добавление групп в массиве\n
+    Добавление групп в массиве
     """
     permission_classes = [IsAuthenticated]
 
@@ -178,8 +192,10 @@ class AddGroup(APIView):
 
 class AddBlock(APIView):
     """
-    get:Список всех блоков интитута
-    post:Добавление доп курсов в массиве
+    get:Список всех блоков интитута\n
+    Список всех блоков интитута
+    post:Добавление доп курсов в массиве\n
+    Добавление доп курсов в массиве
     """
     permission_classes = [IsAuthenticated]
 
@@ -207,8 +223,10 @@ class AddBlock(APIView):
 
 class AddSubject(APIView):
     """
-    get:Список всех предметов интитута
-    post:Добавление доп курсов в массиве
+    get:Список всех предметов интитута\n
+    Список всех предметов интитута
+    post:Добавление доп курсов в массиве\n
+    Добавление доп курсов в массиве
     """
     permission_classes = [IsAuthenticated]
 
@@ -243,6 +261,9 @@ class AddSubject(APIView):
 class GetTimetable(APIView):
     """
     post:Получить рассписание
+
+    is_even_week : {\n1: \"ODD_WEEK\",\n 2: \"EVEN_WEEK\",\n 3: \"ALL_WEEKS\"\n}
+    type : {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
     """
 
     @swagger_auto_schema(request_body=GetTimeTableSerializer(), responses={200: TimeTableSerializer(many=True), 400: MessageSerializer()})
@@ -255,20 +276,47 @@ class GetTimetable(APIView):
         group_subjects = Subject.objects.filter(block_id=block_id)
         if not review.get("dop_course_id"):
             serialize = Lesson.objects.filter(group_id=review.get("group_id"), subject__in=group_subjects)
-            result = TimeTableSerializer(serialize, many=True).data
-            return Response(result)
-        for i in review.get("dop_course_id"):
-            if not Subject.objects.filter(id=i).exists():
-                return Response({"text": "extra course does not exists"}, status=400)
+        else:
+            for i in review.get("dop_course_id"):
+                if not Subject.objects.filter(id=i).exists():
+                    return Response({"text": "extra course does not exists"}, status=400)
 
-        serialize = Lesson.objects.filter(Q(group_id=review.get("group_id"), subject_id__in=review.get("dop_course_id")) |
-                                          Q(group_id=review.get("group_id"), subject__in=group_subjects))
+            serialize = Lesson.objects.filter(Q(group_id=review.get("group_id"), subject_id__in=review.get("dop_course_id")) |
+                                              Q(group_id=review.get("group_id"), subject__in=group_subjects))
+
+        for lesson in serialize:
+            lesson.is_changed = False
+            if Changes.objects.filter(lesson=lesson).exists():
+                for change in Changes.objects.filter(lesson=lesson):
+                    if change.start_date <= datetime.now().date() and datetime.now().date() <= change.end_date:
+                        if change.type == 1:
+                            lesson.is_changed = True
+                            lesson.type = 5
+
+                        elif change.type == 2:
+                            lesson.is_changed = True
+                            lesson.day_name = change.day_change
+
+                        elif change.type == 3:
+                            lesson.is_changed = True
+                            lesson.start_time = change.time_change_start
+                            lesson.end_time = change.time_change_end
+
+                        elif change.type == 4:
+                            lesson.is_changed = True
+                            lesson.teacher = change.teacher_change
+
+                        elif change.type == 5:
+                            lesson.is_changed = True
+                            lesson.type = change.format_change
+
         result = TimeTableSerializer(serialize, many=True).data
         return Response(result)
 
 class GetCourse(APIView):
     """
-    post:Получить список курсов интитута
+    get:Получить список курсов интитута\n
+    Получить список курсов интитута
     """
 
     permission_classes = [IsAuthenticated]
@@ -283,7 +331,8 @@ class GetCourse(APIView):
 
 class GetAccount(APIView):
     """
-    post:Получить данные деканата
+    get: Получить данные деканата\n
+    Получить данные деканата
     """
 
     permission_classes = [IsAuthenticated]
@@ -298,12 +347,19 @@ class GetAccount(APIView):
 
 class GetTable(APIView):
     """
-    post:Получить все таблицы
+    get:Получить все таблицы
+
+    changes
+    type : {\n1: \"CANCEL\",\n 2: \"DAY_CHANGE\",\n 3: \"TIME_CHANGE\",\n 4: \"TEACHER_CHANGE\",\n 5: \"FORMAT_CHANGE\"\n}
+    -------------------------
+    lessons
+    is_even_week : {\n1: \"ODD_WEEK\",\n 2: \"EVEN_WEEK\",\n 3: \"ALL_WEEKS\"\n}
+    type : {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
     """
 
     permission_classes = [IsAuthenticated]
 
-    # @swagger_auto_schema(responses={200: DirectorSerializer(), 400: MessageSerializer()})
+    @swagger_auto_schema(responses={200: DBSerializer(), 400: MessageSerializer()})
     def get(self, request):
         institute_id = request.user.institute_id
         courses = Course.objects.filter(institute_id=institute_id)
@@ -319,7 +375,7 @@ class GetTable(APIView):
                   "blocks": GetBlockSerializer(blocks, many=True).data,
                   "subjects": GetDopCourseSerializer(subjects, many=True).data,
                   "teachers": TeacherSerializer(teachers, many=True).data,
-                  "lessons": TimeTableSerializer(lessons, many=True).data,
+                  "lessons": DirectorTimeTableSerializer(lessons, many=True).data,
                   "changes": ChangesSerializer(changes, many=True).data
                   }
         return Response(result)
