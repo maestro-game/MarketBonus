@@ -1,7 +1,9 @@
-from django.db import models
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from django.utils.text import gettext_lazy as _
 
-from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course, Director, Changes, days
+from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course, Director, Changes, days, \
+    lesson_type, even_week
 
 
 class CreateTimeTableSerializer(serializers.Serializer):
@@ -60,6 +62,17 @@ class TeacherSerializer(serializers.ModelSerializer):
         model = Teacher
         fields = ["id", "name", "profile_link", "not_work_from"]
 
+class PutTeacherSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    name = serializers.CharField(max_length=100, required=False)
+
+    class Meta:
+        model = Teacher
+        fields = ["id", "name", "profile_link", "not_work_from"]
+
+class DeleteSerializer(serializers.Serializer):
+    id = serializers.ListField(child=serializers.IntegerField())
+
 class GroupSerializer(serializers.ModelSerializer):
     course = serializers.IntegerField()
 
@@ -81,6 +94,15 @@ class SubjectSerializer(serializers.ModelSerializer):
         model = Subject
         fields = ["id", "name", "block_id"]
 
+class PutSubjectSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    name = serializers.CharField(max_length=50, required=False)
+    block_id = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = Subject
+        fields = ["id", "name", "block_id"]
+
 class GetTimeTableSerializer(serializers.Serializer):
     group_id = serializers.IntegerField()
     dop_course_id = serializers.ListField(child=serializers.IntegerField(), required=False)
@@ -97,6 +119,23 @@ class DirectorTimeTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = "__all__"
+
+class PutLessonSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    day_name = serializers.ChoiceField(choices=days, required=False)
+    start_time = serializers.TimeField(required=False)
+    end_time = serializers.TimeField(required=False)
+    type = serializers.ChoiceField(choices=lesson_type, required=False)
+    is_even_week = serializers.ChoiceField(choices=even_week, required=False)
+    teacher = serializers.IntegerField(required=False)
+    subject = serializers.IntegerField(required=False)
+    classroom = serializers.CharField(max_length=100, required=False)
+    group = serializers.IntegerField(required=False)
+    links = serializers.ListField(child=serializers.CharField(max_length=200), required=False)
+
+    class Meta:
+        model = Lesson
+        fields = ["id", "day_name", "start_time", "end_time", "type", "is_even_week", "teacher", "subject", "classroom", "group", "links"]
 
 class CourseSerializer(serializers.ModelSerializer):
 
@@ -132,3 +171,20 @@ class DBSerializer(serializers.Serializer):
 class MessageSerializer(serializers.Serializer):
     text = serializers.CharField()
 
+
+class RefreshTokenSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    default_error_messages = {
+        'bad_token': _('Token is invalid or expired')
+    }
+
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+
+    def save(self, **kwargs):
+        try:
+            RefreshToken(self.token).blacklist()
+        except TokenError:
+            self.fail('bad_token')

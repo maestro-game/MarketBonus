@@ -2,6 +2,8 @@ from datetime import datetime
 
 from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,7 +13,8 @@ from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, Get
     GetInstituteSerializer, GetGroupSerializer, GetBlockSerializer, TeacherSerializer, \
     GroupSerializer, MessageSerializer, BlockSerializer, SubjectSerializer, GetDopCourseSerializer, \
     GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer, ChangesSerializer, \
-    DirectorTimeTableSerializer, DBSerializer
+    DirectorTimeTableSerializer, DBSerializer, RefreshTokenSerializer, DeleteSerializer, PutTeacherSerializer, \
+    PutSubjectSerializer, PutLessonSerializer
 
 
 class CreateTimeTable(APIView):
@@ -134,6 +137,10 @@ class AddTeacher(APIView):
     Список всех преподавателей интитута
     post:Добавление преподавателей в массиве\n
     Добавление преподавателей в массиве
+    put:Обновить данные преподавателей в массиве\n
+    Обновить данные преподавателей в массиве
+    delete:Удалить преподавателей в массиве\n
+    Удалить преподавателей в массиве
     """
     permission_classes = [IsAuthenticated]
 
@@ -154,6 +161,45 @@ class AddTeacher(APIView):
         serialize = Teacher.objects.filter(institute_id=institute_id)
         result = TeacherSerializer(serialize, many=True).data
         return Response(result)
+
+    @swagger_auto_schema(request_body=PutTeacherSerializer(many=True), responses={200: TeacherSerializer(many=True), 400: MessageSerializer()})
+    def put(self, request):
+        institute_id = request.user.institute_id
+        review = PutTeacherSerializer(data=request.data, many=True)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for teacher_data in review.data:
+            if not Teacher.objects.filter(id=teacher_data.get('id'), institute_id=institute_id).exists():
+                return Response({"text": "Teacher id does not exist"}, status=400)
+        for teacher_data in request.data:
+            keys = teacher_data.keys()
+            teacher = Teacher.objects.get(id=teacher_data.get('id'))
+            if 'name' in keys:
+                teacher.name = teacher_data.get('name')
+            if 'profile_link' in keys:
+                teacher.profile_link = teacher_data.get('profile_link')
+            if 'not_work_from' in keys:
+                teacher.not_work_from = teacher_data.get('not_work_from')
+            teacher.save()
+        serialize = Teacher.objects.filter(institute_id=institute_id)
+        result = TeacherSerializer(serialize, many=True).data
+        return Response(result)
+
+    @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: TeacherSerializer(many=True), 400: MessageSerializer()})
+    def delete(self, request):
+        institute_id = request.user.institute_id
+        review = DeleteSerializer(data=request.data)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for id in review.data.get('id'):
+            if not Teacher.objects.filter(id=id, institute_id=institute_id).exists():
+                return Response({"text": "Teacher id does not exist"}, status=400)
+        for id in review.data.get('id'):
+            Teacher.objects.filter(id=id).delete()
+        serialize = Teacher.objects.filter(institute_id=institute_id)
+        result = TeacherSerializer(serialize, many=True).data
+        return Response(result)
+
 
 class AddGroup(APIView):
     """
@@ -225,8 +271,12 @@ class AddSubject(APIView):
     """
     get:Список всех предметов интитута\n
     Список всех предметов интитута
-    post:Добавление доп курсов в массиве\n
-    Добавление доп курсов в массиве
+    post:Добавление предметов в массиве\n
+    Добавление предметов в массиве
+    put:Обновить данные предметов в массиве\n
+    Обновить данные предметов в массиве
+    delete:Удалить предметы в массиве\n
+    Удалить предметы в массиве
     """
     permission_classes = [IsAuthenticated]
 
@@ -256,6 +306,148 @@ class AddSubject(APIView):
         serialize = Subject.objects.filter(block__in=block)
         result = SubjectSerializer(serialize, many=True).data
         return Response(result)
+
+    @swagger_auto_schema(request_body=PutSubjectSerializer(many=True), responses={200: SubjectSerializer(many=True), 400: MessageSerializer()})
+    def put(self, request):
+        institute_id = request.user.institute_id
+        review = PutSubjectSerializer(data=request.data, many=True)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        courses_id = Course.objects.filter(institute_id=institute_id)
+        blocks = Block.objects.filter(course_id__in=courses_id)
+        for subject_data in review.data:
+            if not Subject.objects.filter(id=subject_data.get('id'), block__in=blocks).exists():
+                return Response({"text": "Subject id does not exist"}, status=400)
+        for subject_data in request.data:
+            keys = subject_data.keys()
+            subject = Subject.objects.get(id=subject_data.get('id'))
+            if 'name' in keys:
+                subject.name = subject_data.get('name')
+            block = Block.objects.filter(id=subject_data.get('block_id'))
+            if not block.exists():
+                return Response({"text": "Block_id does not exist"}, status=400)
+            if 'block_id' in keys and block[0] in blocks:
+                subject.block_id = subject_data.get('block_id')
+            subject.save()
+        serialize = Subject.objects.filter(block__in=blocks)
+        result = SubjectSerializer(serialize, many=True).data
+        return Response(result)
+
+    @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: SubjectSerializer(many=True), 400: MessageSerializer()})
+    def delete(self, request):
+        institute_id = request.user.institute_id
+        courses_id = Course.objects.filter(institute_id=institute_id)
+        blocks = Block.objects.filter(course_id__in=courses_id)
+        review = DeleteSerializer(data=request.data)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for id in review.data.get('id'):
+            if not Subject.objects.filter(id=id, block__in=blocks).exists():
+                return Response({"text": "Subject id does not exist"}, status=400)
+        for id in review.data.get('id'):
+            Subject.objects.filter(id=id).delete()
+        serialize = Subject.objects.filter(block__in=blocks)
+        result = SubjectSerializer(serialize, many=True).data
+        return Response(result)
+
+
+class GetLesson(APIView):
+    """
+    get:Список всех занятий(экземпляров) интитута без изменений\n
+    Список всех занятий(экземпляров) интитута
+    post:Добавление занятий(экземпляров) в массиве\n
+    Добавление предметов в массиве
+    put:Обновить данные занятий(экземпляров) в массиве\n
+    Обновить данные занятий(экземпляров) в массиве
+    delete:Удалить данные занятий(экземпляров) в массиве\n
+    Удалить данные занятий(экземпляров) в массиве
+    """
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
+    def get(self, request):
+        institute_id = request.user.institute_id
+        course = Course.objects.filter(institute_id=institute_id)
+        block = Block.objects.filter(course__in=course)
+        subject = Subject.objects.filter(block__in=block)
+        serialize = Lesson.objects.filter(subject__in=subject)
+        result = DirectorTimeTableSerializer(serialize, many=True).data
+        return Response(result)
+
+    @swagger_auto_schema(request_body=DirectorTimeTableSerializer(many=True), responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
+    def post(self, request):
+        institute_id = request.user.institute_id
+        course = Course.objects.filter(institute_id=institute_id)
+        block = Block.objects.filter(course__in=course)
+        subject = Subject.objects.filter(block__in=block)
+        review = DirectorTimeTableSerializer(data=request.data, many=True)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        review.save()
+        serialize = Lesson.objects.filter(subject__in=subject)
+        result = DirectorTimeTableSerializer(serialize, many=True).data
+        return Response(result)
+
+    # @swagger_auto_schema(request_body=PutLessonSerializer(many=True), responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
+    # def put(self, request):
+    #     institute_id = request.user.institute_id
+    #     review = PutLessonSerializer(data=request.data, many=True)
+    #     if not review.is_valid():
+    #         return Response({"text": "incorrect data"}, status=400)
+    #     courses_id = Course.objects.filter(institute_id=institute_id)
+    #     blocks = Block.objects.filter(course_id__in=courses_id)
+    #     for subject_data in review.data:
+    #         if not Subject.objects.filter(id=subject_data.get('id'), block__in=blocks).exists():
+    #             return Response({"text": "Subject id does not exist"}, status=400)
+    #     for subject_data in request.data:
+    #         keys = subject_data.keys()
+    #         subject = Subject.objects.get(id=subject_data.get('id'))
+    #         if 'name' in keys:
+    #             subject.name = subject_data.get('name')
+    #         block = Block.objects.filter(id=subject_data.get('block_id'))
+    #         if not block.exists():
+    #             return Response({"text": "Block_id does not exist"}, status=400)
+    #         if 'block_id' in keys and block[0] in blocks:
+    #             subject.block_id = subject_data.get('block_id')
+    #         subject.save()
+    #     serialize = Subject.objects.filter(block__in=blocks)
+    #     result = SubjectSerializer(serialize, many=True).data
+    #     return Response(result)
+
+    @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
+    def delete(self, request):
+        institute_id = request.user.institute_id
+        course = Course.objects.filter(institute_id=institute_id)
+        block = Block.objects.filter(course__in=course)
+        subject = Subject.objects.filter(block__in=block)
+        review = DeleteSerializer(data=request.data)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for id in review.data.get('id'):
+            if not Lesson.objects.filter(id=id, subject__in=subject).exists():
+                return Response({"text": "Lesson id does not exist"}, status=400)
+        for id in review.data.get('id'):
+            Lesson.objects.filter(id=id).delete()
+        serialize = Lesson.objects.filter(subject__in=subject)
+        result = DirectorTimeTableSerializer(serialize, many=True).data
+        return Response(result)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class GetTimetable(APIView):
@@ -379,6 +571,17 @@ class GetTable(APIView):
                   "changes": ChangesSerializer(changes, many=True).data
                   }
         return Response(result)
+
+
+class LogoutView(GenericAPIView):
+    serializer_class = RefreshTokenSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args):
+        sz = self.get_serializer(data=request.data)
+        sz.is_valid(raise_exception=True)
+        sz.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 
