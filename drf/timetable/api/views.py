@@ -144,7 +144,7 @@ class AddTeacher(APIView):
     Список всех преподавателей интитута
     post:Добавление преподавателей в массиве\n
     Добавление преподавателей в массиве
-    put:Обновить данные преподавателей в массиве\n
+    patch:Обновить данные преподавателей в массиве\n
     Обновить данные преподавателей в массиве
     delete:Удалить преподавателей в массиве\n
     Удалить преподавателей в массиве
@@ -170,7 +170,7 @@ class AddTeacher(APIView):
         return Response(result)
 
     @swagger_auto_schema(request_body=PutTeacherSerializer(many=True), responses={200: TeacherSerializer(many=True), 400: MessageSerializer()})
-    def put(self, request):
+    def patch(self, request):
         institute_id = request.user.institute_id
         review = PutTeacherSerializer(data=request.data, many=True)
         if not review.is_valid():
@@ -282,7 +282,7 @@ class AddSubject(APIView):
     Список всех предметов интитута
     post:Добавление предметов в массиве\n
     Добавление предметов в массиве
-    put:Обновить данные предметов в массиве\n
+    patch:Обновить данные предметов в массиве\n
     Обновить данные предметов в массиве
     delete:Удалить предметы в массиве\n
     Удалить предметы в массиве
@@ -317,7 +317,7 @@ class AddSubject(APIView):
         return Response(result)
 
     @swagger_auto_schema(request_body=PutSubjectSerializer(many=True), responses={200: SubjectSerializer(many=True), 400: MessageSerializer()})
-    def put(self, request):
+    def patch(self, request):
         institute_id = request.user.institute_id
         review = PutSubjectSerializer(data=request.data, many=True)
         if not review.is_valid():
@@ -332,10 +332,10 @@ class AddSubject(APIView):
             subject = Subject.objects.get(id=subject_data.get('id'))
             if 'name' in keys:
                 subject.name = subject_data.get('name')
-            block = Block.objects.filter(id=subject_data.get('block_id'))
-            if not block.exists():
-                return Response({"text": "Block_id does not exist"}, status=400)
-            if 'block_id' in keys and block[0] in blocks:
+            if 'block_id' in keys:
+                block = Block.objects.filter(id=subject_data.get('block_id'))
+                if not block.exists():
+                    return Response({"text": "Block_id does not exist"}, status=400)
                 subject.block_id = subject_data.get('block_id')
             subject.save()
         serialize = Subject.objects.filter(block__in=blocks)
@@ -370,7 +370,7 @@ post:Добавление занятий(экземпляров) в массив
     is_even_week {\n1: \"ODD_WEEK\",\n 2: \"EVEN_WEEK\",\n 3: \"ALL_WEEKS\"\n}
     type {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
 
-put:Обновить данные занятий(экземпляров) в массиве\n
+patch:Обновить данные занятий(экземпляров) в массиве\n
     is_even_week {\n1: \"ODD_WEEK\",\n 2: \"EVEN_WEEK\",\n 3: \"ALL_WEEKS\"\n}
     type {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
 
@@ -404,7 +404,7 @@ delete:Удалить данные занятий(экземпляров) в м�
         return Response(result)
 
     @swagger_auto_schema(request_body=PutLessonSerializer(many=True), responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
-    def put(self, request):
+    def patch(self, request):
         institute_id = request.user.institute_id
         review = PutLessonSerializer(data=request.data, many=True)
         if not review.is_valid():
