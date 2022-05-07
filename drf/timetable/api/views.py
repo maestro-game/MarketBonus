@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from . import models
 from .models import Institute, University, Director, Group, Subject, Teacher, Block, Course, Lesson, Changes
 from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, GetFullInstituteSerializer, \
     GetInstituteSerializer, GetGroupSerializer, GetBlockSerializer, TeacherSerializer, \
@@ -66,6 +67,7 @@ class CreateTimeTable(APIView):
         director.save()
         return Response('Successfully')
 
+
 class GetUniversity(APIView):
     """
     get:Список университетов\n
@@ -77,6 +79,7 @@ class GetUniversity(APIView):
         serialize = University.objects.all()
         result = GetUniversitySerializer(serialize, many=True).data
         return Response(result)
+
 
 class GetInstitute(APIView):
     """
@@ -90,6 +93,7 @@ class GetInstitute(APIView):
         result = GetInstituteSerializer(serialize, many=True).data
         return Response(result)
 
+
 class GetGroup(APIView):
     """
     get:Список групп по id института\n
@@ -102,6 +106,7 @@ class GetGroup(APIView):
         serialize = Group.objects.filter(course__in=course)
         result = GetGroupSerializer(serialize, many=True).data
         return Response(result)
+
 
 class GetBlock(APIView):
     """
@@ -119,6 +124,7 @@ class GetBlock(APIView):
             result = []
         return Response(result)
 
+
 class GetDopCourse(APIView):
     """
     get:Список доп курсов по id блока\n
@@ -130,6 +136,7 @@ class GetDopCourse(APIView):
         serialize = Subject.objects.filter(block_id=id)
         result = GetDopCourseSerializer(serialize, many=True).data
         return Response(result)
+
 
 class AddTeacher(APIView):
     """
@@ -236,6 +243,7 @@ class AddGroup(APIView):
         result = GetGroupSerializer(serialize, many=True).data
         return Response(result)
 
+
 class AddBlock(APIView):
     """
     get:Список всех блоков интитута\n
@@ -266,6 +274,7 @@ class AddBlock(APIView):
         serialize = Block.objects.filter(course__in=Course.objects.filter(institute_id=institute_id)).distinct('id').exclude(name__isnull=True)
         result = BlockSerializer(serialize, many=True).data
         return Response(result)
+
 
 class AddSubject(APIView):
     """
@@ -353,13 +362,19 @@ class AddSubject(APIView):
 
 class GetLesson(APIView):
     """
-    get:Список всех занятий(экземпляров) интитута без изменений\n
-    Список всех занятий(экземпляров) интитута
-    post:Добавление занятий(экземпляров) в массиве\n
-    Добавление предметов в массиве
-    put:Обновить данные занятий(экземпляров) в массиве\n
-    Обновить данные занятий(экземпляров) в массиве
-    delete:Удалить данные занятий(экземпляров) в массиве\n
+get:Список всех занятий(экземпляров) интитута без изменений\n
+    is_even_week {\n1: \"ODD_WEEK\",\n 2: \"EVEN_WEEK\",\n 3: \"ALL_WEEKS\"\n}
+    type {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
+
+post:Добавление занятий(экземпляров) в массиве\n
+    is_even_week {\n1: \"ODD_WEEK\",\n 2: \"EVEN_WEEK\",\n 3: \"ALL_WEEKS\"\n}
+    type {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
+
+put:Обновить данные занятий(экземпляров) в массиве\n
+    is_even_week {\n1: \"ODD_WEEK\",\n 2: \"EVEN_WEEK\",\n 3: \"ALL_WEEKS\"\n}
+    type {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
+
+delete:Удалить данные занятий(экземпляров) в массиве\n
     Удалить данные занятий(экземпляров) в массиве
     """
     permission_classes = [IsAuthenticated]
@@ -388,31 +403,48 @@ class GetLesson(APIView):
         result = DirectorTimeTableSerializer(serialize, many=True).data
         return Response(result)
 
-    # @swagger_auto_schema(request_body=PutLessonSerializer(many=True), responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
-    # def put(self, request):
-    #     institute_id = request.user.institute_id
-    #     review = PutLessonSerializer(data=request.data, many=True)
-    #     if not review.is_valid():
-    #         return Response({"text": "incorrect data"}, status=400)
-    #     courses_id = Course.objects.filter(institute_id=institute_id)
-    #     blocks = Block.objects.filter(course_id__in=courses_id)
-    #     for subject_data in review.data:
-    #         if not Subject.objects.filter(id=subject_data.get('id'), block__in=blocks).exists():
-    #             return Response({"text": "Subject id does not exist"}, status=400)
-    #     for subject_data in request.data:
-    #         keys = subject_data.keys()
-    #         subject = Subject.objects.get(id=subject_data.get('id'))
-    #         if 'name' in keys:
-    #             subject.name = subject_data.get('name')
-    #         block = Block.objects.filter(id=subject_data.get('block_id'))
-    #         if not block.exists():
-    #             return Response({"text": "Block_id does not exist"}, status=400)
-    #         if 'block_id' in keys and block[0] in blocks:
-    #             subject.block_id = subject_data.get('block_id')
-    #         subject.save()
-    #     serialize = Subject.objects.filter(block__in=blocks)
-    #     result = SubjectSerializer(serialize, many=True).data
-    #     return Response(result)
+    @swagger_auto_schema(request_body=PutLessonSerializer(many=True), responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
+    def put(self, request):
+        institute_id = request.user.institute_id
+        review = PutLessonSerializer(data=request.data, many=True)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        courses = Course.objects.filter(institute_id=institute_id)
+        blocks = Block.objects.filter(course__in=courses)
+        subjects = Subject.objects.filter(block__in=blocks)
+        for lesson_data in review.data:
+            if not Lesson.objects.filter(id=lesson_data.get('id'), subject__in=subjects).exists():
+                return Response({"text": "Lesson id does not exist"}, status=400)
+        for lesson_data in request.data:
+            keys = lesson_data.keys()
+            lesson = Lesson.objects.get(id=lesson_data.get('id'))
+            try:
+                if 'day_name' in keys and lesson_data.get('day_name') in models.days:
+                    lesson.day_name = lesson_data.get('day_name')
+                if 'start_time' in keys:
+                    lesson.start_time = lesson_data.get('start_time')
+                if 'end_time' in keys:
+                    lesson.end_time = lesson_data.get('end_time')
+                if 'type' in keys and lesson_data.get('type') in models.lesson_type:
+                    lesson.type = lesson_data.get('type')
+                if 'is_even_week' in keys and lesson_data.get('is_even_week') in models.even_week:
+                    lesson.is_even_week = lesson_data.get('type')
+                if 'teacher' in keys and Teacher.objects.filter(id=lesson_data.get('teacher'), institute_id=institute_id).exists():
+                    lesson.teacher = lesson_data.get('teacher')
+                if 'subject' in keys and Subject.objects.filter(id=lesson_data.get('subject'), block__in=blocks).exists():
+                    lesson.subject = lesson_data.get('subject')
+                if 'classroom' in keys:
+                    lesson.classroom = lesson_data.get('classroom')
+                if 'group' in keys and Group.objects.filter(id=lesson_data.get('group'), course__in=courses).exists():
+                    lesson.group = lesson_data.get('group')
+                if 'links' in keys:
+                    lesson.links = lesson_data.get('links')
+            except:
+                return Response({"text": "Some data is incorrect"}, status=400)
+            lesson.save()
+        serialize = Lesson.objects.filter(subject__in=subjects)
+        result = DirectorTimeTableSerializer(serialize, many=True).data
+        return Response(result)
 
     @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
     def delete(self, request):
@@ -431,23 +463,6 @@ class GetLesson(APIView):
         serialize = Lesson.objects.filter(subject__in=subject)
         result = DirectorTimeTableSerializer(serialize, many=True).data
         return Response(result)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class GetTimetable(APIView):
@@ -504,6 +519,7 @@ class GetTimetable(APIView):
 
         result = TimeTableSerializer(serialize, many=True).data
         return Response(result)
+
 
 class GetCourse(APIView):
     """
@@ -582,7 +598,3 @@ class LogoutView(GenericAPIView):
         sz.is_valid(raise_exception=True)
         sz.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-
-

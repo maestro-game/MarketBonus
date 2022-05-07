@@ -6,22 +6,17 @@ from .models import Institute, University, Group, Block, Subject, Teacher, Lesso
     lesson_type, even_week
 
 
-class CreateTimeTableSerializer(serializers.Serializer):
-    login = serializers.CharField()
-    password = serializers.CharField()
-    name = serializers.CharField()
-    institute_name = serializers.CharField()
-    institute_short_name = serializers.CharField()
-    institute_site = serializers.CharField()
-    university_name = serializers.CharField()
-    university_short_name = serializers.CharField()
-    university_site = serializers.CharField()
+
+# University
 
 class GetUniversitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = University
         fields = "__all__"
+
+
+# Institute
 
 class GetInstituteSerializer(serializers.ModelSerializer):
 
@@ -38,40 +33,15 @@ class GetFullInstituteSerializer(serializers.ModelSerializer):
 
     depth = 1
 
+
+
+# Group
+
 class GetGroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
         fields = "__all__"
-
-class GetBlockSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Block
-        fields = "__all__"
-
-class GetDopCourseSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Subject
-        fields = "__all__"
-
-class TeacherSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Teacher
-        fields = ["id", "name", "profile_link", "not_work_from"]
-
-class PutTeacherSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=True)
-    name = serializers.CharField(max_length=100, required=False)
-
-    class Meta:
-        model = Teacher
-        fields = ["id", "name", "profile_link", "not_work_from"]
-
-class DeleteSerializer(serializers.Serializer):
-    id = serializers.ListField(child=serializers.IntegerField())
 
 class GroupSerializer(serializers.ModelSerializer):
     course = serializers.IntegerField()
@@ -80,12 +50,30 @@ class GroupSerializer(serializers.ModelSerializer):
         model = Group
         fields = "__all__"
 
+
+# Block
+
+class GetBlockSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Block
+        fields = "__all__"
+
 class BlockSerializer(serializers.ModelSerializer):
     course_id = serializers.IntegerField()
 
     class Meta:
         model = Block
         fields = ["id", "name", "course_id"]
+
+
+# Subject
+
+class GetDopCourseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Subject
+        fields = "__all__"
 
 class SubjectSerializer(serializers.ModelSerializer):
     block_id = serializers.IntegerField()
@@ -103,9 +91,29 @@ class PutSubjectSerializer(serializers.ModelSerializer):
         model = Subject
         fields = ["id", "name", "block_id"]
 
-class GetTimeTableSerializer(serializers.Serializer):
-    group_id = serializers.IntegerField()
-    dop_course_id = serializers.ListField(child=serializers.IntegerField(), required=False)
+
+
+
+# Teacher
+
+class TeacherSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Teacher
+        fields = ["id", "name", "profile_link", "not_work_from"]
+
+class PutTeacherSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    name = serializers.CharField(max_length=100, required=False)
+
+    class Meta:
+        model = Teacher
+        fields = ["id", "name", "profile_link", "not_work_from"]
+
+
+
+
+# Lesson
 
 class TimeTableSerializer(serializers.ModelSerializer):
     is_changed = serializers.BooleanField(required=True)
@@ -137,11 +145,19 @@ class PutLessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = ["id", "day_name", "start_time", "end_time", "type", "is_even_week", "teacher", "subject", "classroom", "group", "links"]
 
+
+
+# Course
+
 class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
         fields = "__all__"
+
+
+
+# Director
 
 class DirectorSerializer(serializers.ModelSerializer):
     institute = GetFullInstituteSerializer()
@@ -152,12 +168,35 @@ class DirectorSerializer(serializers.ModelSerializer):
 
 
 
+# Changes
+
 class ChangesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Changes
         fields = "__all__"
 
+
+
+# Other
+
+class CreateTimeTableSerializer(serializers.Serializer):
+    login = serializers.CharField()
+    password = serializers.CharField()
+    name = serializers.CharField()
+    institute_name = serializers.CharField()
+    institute_short_name = serializers.CharField()
+    institute_site = serializers.CharField()
+    university_name = serializers.CharField()
+    university_short_name = serializers.CharField()
+    university_site = serializers.CharField()
+
+class DeleteSerializer(serializers.Serializer):
+    id = serializers.ListField(child=serializers.IntegerField())
+
+class GetTimeTableSerializer(serializers.Serializer):
+    group_id = serializers.IntegerField()
+    dop_course_id = serializers.ListField(child=serializers.IntegerField(), required=False)
 
 class DBSerializer(serializers.Serializer):
     courses = CourseSerializer(many=True)
@@ -170,7 +209,6 @@ class DBSerializer(serializers.Serializer):
 
 class MessageSerializer(serializers.Serializer):
     text = serializers.CharField()
-
 
 class RefreshTokenSerializer(serializers.Serializer):
     refresh = serializers.CharField()
