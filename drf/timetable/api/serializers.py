@@ -137,7 +137,7 @@ class PutLessonSerializer(serializers.ModelSerializer):
     is_even_week = serializers.ChoiceField(choices=even_week, required=False)
     teacher = serializers.IntegerField(required=False)
     subject = serializers.IntegerField(required=False)
-    classroom = serializers.CharField(max_length=100, required=False)
+    classroom = serializers.CharField(max_length=100, null=True, required=False)
     group = serializers.IntegerField(required=False)
     links = serializers.ListField(child=serializers.CharField(max_length=200), required=False)
 
