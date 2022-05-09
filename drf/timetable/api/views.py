@@ -214,6 +214,10 @@ class AddGroup(APIView):
     Список всех групп интитута
     post:Добавление групп в массиве\n
     Добавление групп в массиве
+    patch:Обновить данные групп в массиве\n
+    Обновить данные групп в массиве
+    delete:Удалить группы в массиве\n
+    Удалить группы в массиве
     """
     permission_classes = [IsAuthenticated]
 
@@ -240,6 +244,22 @@ class AddGroup(APIView):
             return Response({"text": "incorrect data"}, status=400)
         course = Course.objects.filter(institute_id=institute_id)
         serialize = Group.objects.filter(course__in=course)
+        result = GetGroupSerializer(serialize, many=True).data
+        return Response(result)
+
+    @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: GetGroupSerializer(many=True), 400: MessageSerializer()})
+    def delete(self, request):
+        institute_id = request.user.institute_id
+        courses = Course.objects.filter(institute_id=institute_id)
+        review = DeleteSerializer(data=request.data)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for id in review.data.get('id'):
+            if not Group.objects.filter(id=id, course__in=courses).exists():
+                return Response({"text": "Group id does not exist"}, status=400)
+        for id in review.data.get('id'):
+            Group.objects.filter(id=id, course__in=courses).delete()
+        serialize = Group.objects.filter(course__in=courses)
         result = GetGroupSerializer(serialize, many=True).data
         return Response(result)
 
@@ -430,13 +450,13 @@ delete:Удалить данные занятий(экземпляров) в м�
                 if 'is_even_week' in keys and lesson_data.get('is_even_week') in models.even_week:
                     lesson.is_even_week = lesson_data.get('type')
                 if 'teacher' in keys and Teacher.objects.filter(id=lesson_data.get('teacher'), institute_id=institute_id).exists():
-                    lesson.teacher = lesson_data.get('teacher')
+                    lesson.teacher_id = lesson_data.get('teacher')
                 if 'subject' in keys and Subject.objects.filter(id=lesson_data.get('subject'), block__in=blocks).exists():
-                    lesson.subject = lesson_data.get('subject')
+                    lesson.subject_id = lesson_data.get('subject')
                 if 'classroom' in keys:
                     lesson.classroom = lesson_data.get('classroom')
                 if 'group' in keys and Group.objects.filter(id=lesson_data.get('group'), course__in=courses).exists():
-                    lesson.group = lesson_data.get('group')
+                    lesson.group_id = lesson_data.get('group')
                 if 'links' in keys:
                     lesson.links = lesson_data.get('links')
             except:
@@ -551,6 +571,40 @@ class GetAccount(APIView):
         serialize = Director.objects.filter(institute_id=institute_id)[0]
         result = DirectorSerializer(serialize).data
         return Response(result)
+
+
+class GetChange(APIView):
+    """
+    get: Получить изменения\n
+    Получить изменения
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(responses={200: ChangesSerializer(many=True), 400: MessageSerializer()})
+    def get(self, request):
+        institute_id = request.user.institute_id
+        course = Course.objects.filter(institute_id=institute_id)
+        block = Block.objects.filter(course__in=course)
+        subject = Subject.objects.filter(block__in=block)
+        lesson = Lesson.objects.filter(subject__in=subject)
+        serialize = Changes.objects.filter(lesson__in=lesson)
+        result = ChangesSerializer(serialize, many=True).data
+        return Response(result)
+
+    # @swagger_auto_schema(request_body=ChangesSerializer(many=True), responses={200: ChangesSerializer(many=True), 400: MessageSerializer()})
+    # def post(self, request):
+    #     institute_id = request.user.institute_id
+    #     course = Course.objects.filter(institute_id=institute_id)
+    #     block = Block.objects.filter(course__in=course)
+    #     subject = Subject.objects.filter(block__in=block)
+    #     review = DirectorTimeTableSerializer(data=request.data, many=True)
+    #     if not review.is_valid():
+    #         return Response({"text": "incorrect data"}, status=400)
+    #     review.save()
+    #     serialize = Lesson.objects.filter(subject__in=subject)
+    #     result = DirectorTimeTableSerializer(serialize, many=True).data
+    #     return Response(result)
 
 
 class GetTable(APIView):

@@ -18,6 +18,7 @@ urlpatterns = [
     path("dekanat/account/", views.GetAccount.as_view()),
     path("dekanat/lesson/", views.GetLesson.as_view()),
     path("dekanat/table/", views.GetTable.as_view()),
+    path("dekanat/change/", views.GetChange.as_view()),
     path("token/logout/", views.LogoutView.as_view()),
-# редактирование и удаление групп, пар, блоков, изменений
+# редактирование и удаление блоков, изменений
 ]
