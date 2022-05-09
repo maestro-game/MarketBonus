@@ -32,7 +32,7 @@ class Group(models.Model):
     group_number = models.CharField(max_length=100)
 
 class Block (models.Model):
-    course = models.ForeignKey(Course, null=True, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
     name = models.CharField(max_length=100, null=True, blank=True)
 
 class Subject(models.Model):
