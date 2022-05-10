@@ -8,7 +8,6 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import models
 from .models import Institute, University, Director, Group, Subject, Teacher, Block, Course, Lesson, Changes
 from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, GetFullInstituteSerializer, \
     GetInstituteSerializer, GetGroupSerializer, GetBlockSerializer, TeacherSerializer, \
@@ -169,7 +168,7 @@ class AddTeacher(APIView):
         result = TeacherSerializer(serialize, many=True).data
         return Response(result)
 
-    @swagger_auto_schema(request_body=PutTeacherSerializer(many=True), responses={200: TeacherSerializer(many=True), 400: MessageSerializer()})
+    @swagger_auto_schema(request_body=PutTeacherSerializer(many=True), responses={204: "", 400: MessageSerializer()})
     def patch(self, request):
         institute_id = request.user.institute_id
         review = PutTeacherSerializer(data=request.data, many=True)
@@ -180,17 +179,18 @@ class AddTeacher(APIView):
                 return Response({"text": "Teacher id does not exist"}, status=400)
         for teacher_data in request.data:
             keys = teacher_data.keys()
-            teacher = Teacher.objects.get(id=teacher_data.get('id'))
-            if 'name' in keys:
-                teacher.name = teacher_data.get('name')
-            if 'profile_link' in keys:
-                teacher.profile_link = teacher_data.get('profile_link')
-            if 'not_work_from' in keys:
-                teacher.not_work_from = teacher_data.get('not_work_from')
+            try:
+                teacher = Teacher.objects.get(id=teacher_data.get('id'))
+                if 'name' in keys:
+                    teacher.name = teacher_data.get('name')
+                if 'profile_link' in keys:
+                    teacher.profile_link = teacher_data.get('profile_link')
+                if 'not_work_from' in keys:
+                    teacher.not_work_from = teacher_data.get('not_work_from')
+            except:
+                return Response({"text": "incorrect data"}, status=400)
             teacher.save()
-        serialize = Teacher.objects.filter(institute_id=institute_id)
-        result = TeacherSerializer(serialize, many=True).data
-        return Response(result)
+        return Response(status=204)
 
     @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: TeacherSerializer(many=True), 400: MessageSerializer()})
     def delete(self, request):
@@ -336,7 +336,7 @@ class AddSubject(APIView):
         result = SubjectSerializer(serialize, many=True).data
         return Response(result)
 
-    @swagger_auto_schema(request_body=PutSubjectSerializer(many=True), responses={200: SubjectSerializer(many=True), 400: MessageSerializer()})
+    @swagger_auto_schema(request_body=PutSubjectSerializer(many=True), responses={204: "", 400: MessageSerializer()})
     def patch(self, request):
         institute_id = request.user.institute_id
         review = PutSubjectSerializer(data=request.data, many=True)
@@ -358,9 +358,7 @@ class AddSubject(APIView):
                     return Response({"text": "Block_id does not exist"}, status=400)
                 subject.block_id = subject_data.get('block_id')
             subject.save()
-        serialize = Subject.objects.filter(block__in=blocks)
-        result = SubjectSerializer(serialize, many=True).data
-        return Response(result)
+        return Response(status=204)
 
     @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: SubjectSerializer(many=True), 400: MessageSerializer()})
     def delete(self, request):
@@ -423,7 +421,7 @@ delete:Удалить данные занятий(экземпляров) в м�
         result = DirectorTimeTableSerializer(serialize, many=True).data
         return Response(result)
 
-    @swagger_auto_schema(request_body=PutLessonSerializer(many=True), responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
+    @swagger_auto_schema(request_body=PutLessonSerializer(many=True), responses={204: "", 400: MessageSerializer()})
     def patch(self, request):
         institute_id = request.user.institute_id
         review = PutLessonSerializer(data=request.data, many=True)
@@ -439,32 +437,39 @@ delete:Удалить данные занятий(экземпляров) в м�
             keys = lesson_data.keys()
             lesson = Lesson.objects.get(id=lesson_data.get('id'))
             try:
-                if 'day_name' in keys and lesson_data.get('day_name') in models.days:
+                if 'day_name' in keys:
                     lesson.day_name = lesson_data.get('day_name')
                 if 'start_time' in keys:
                     lesson.start_time = lesson_data.get('start_time')
                 if 'end_time' in keys:
                     lesson.end_time = lesson_data.get('end_time')
-                if 'type' in keys and lesson_data.get('type') in models.lesson_type:
+                if 'type' in keys:
                     lesson.type = lesson_data.get('type')
-                if 'is_even_week' in keys and lesson_data.get('is_even_week') in models.even_week:
+                if 'is_even_week' in keys:
                     lesson.is_even_week = lesson_data.get('type')
-                if 'teacher' in keys and Teacher.objects.filter(id=lesson_data.get('teacher'), institute_id=institute_id).exists():
-                    lesson.teacher_id = lesson_data.get('teacher')
-                if 'subject' in keys and Subject.objects.filter(id=lesson_data.get('subject'), block__in=blocks).exists():
-                    lesson.subject_id = lesson_data.get('subject')
+                if 'teacher' in keys:
+                    if Teacher.objects.filter(id=lesson_data.get('teacher'), institute_id=institute_id).exists():
+                        lesson.teacher_id = lesson_data.get('teacher')
+                    else:
+                        return Response({"text": "incorrect teacher"}, status=400)
+                if 'subject' in keys:
+                    if Subject.objects.filter(id=lesson_data.get('subject'), block__in=blocks).exists():
+                        lesson.subject_id = lesson_data.get('subject')
+                    else:
+                        return Response({"text": "incorrect subject"}, status=400)
                 if 'classroom' in keys:
                     lesson.classroom = lesson_data.get('classroom')
-                if 'group' in keys and Group.objects.filter(id=lesson_data.get('group'), course__in=courses).exists():
-                    lesson.group_id = lesson_data.get('group')
+                if 'group' in keys:
+                    if Group.objects.filter(id=lesson_data.get('group'), course__in=courses).exists():
+                        lesson.group_id = lesson_data.get('group')
+                    else:
+                        return Response({"text": "incorrect group"}, status=400)
                 if 'links' in keys:
                     lesson.links = lesson_data.get('links')
             except:
                 return Response({"text": "Some data is incorrect"}, status=400)
             lesson.save()
-        serialize = Lesson.objects.filter(subject__in=subjects)
-        result = DirectorTimeTableSerializer(serialize, many=True).data
-        return Response(result)
+        return Response(status=204)
 
     @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: DirectorTimeTableSerializer(many=True), 400: MessageSerializer()})
     def delete(self, request):
