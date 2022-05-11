@@ -13,8 +13,8 @@ from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, Get
     GetInstituteSerializer, GetGroupSerializer, GetBlockSerializer, TeacherSerializer, \
     GroupSerializer, MessageSerializer, BlockSerializer, SubjectSerializer, GetDopCourseSerializer, \
     GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer, ChangesSerializer, \
-    DirectorTimeTableSerializer, DBSerializer, RefreshTokenSerializer, DeleteSerializer, PutTeacherSerializer, \
-    PutSubjectSerializer, PutLessonSerializer
+    DirectorTimeTableSerializer, DBSerializer, RefreshTokenSerializer, DeleteSerializer, PatchTeacherSerializer, \
+    PatchSubjectSerializer, PatchLessonSerializer, PatchGroupSerializer, PatchChangeSerializer
 
 
 class CreateTimeTable(APIView):
@@ -168,10 +168,10 @@ class AddTeacher(APIView):
         result = TeacherSerializer(serialize, many=True).data
         return Response(result)
 
-    @swagger_auto_schema(request_body=PutTeacherSerializer(many=True), responses={204: "", 400: MessageSerializer()})
+    @swagger_auto_schema(request_body=PatchTeacherSerializer(many=True), responses={204: "", 400: MessageSerializer()})
     def patch(self, request):
         institute_id = request.user.institute_id
-        review = PutTeacherSerializer(data=request.data, many=True)
+        review = PatchTeacherSerializer(data=request.data, many=True)
         if not review.is_valid():
             return Response({"text": "incorrect data"}, status=400)
         for teacher_data in review.data:
@@ -246,6 +246,29 @@ class AddGroup(APIView):
         serialize = Group.objects.filter(course__in=course)
         result = GetGroupSerializer(serialize, many=True).data
         return Response(result)
+
+    @swagger_auto_schema(request_body=PatchGroupSerializer(many=True), responses={204: "", 400: MessageSerializer()})
+    def patch(self, request):
+        institute_id = request.user.institute_id
+        course = Course.objects.filter(institute_id=institute_id)
+        review = PatchGroupSerializer(data=request.data, many=True)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for group_data in review.data:
+            if not Group.objects.filter(id=group_data.get('id'), course__in=course).exists():
+                return Response({"text": "Group id does not exist"}, status=400)
+        for group_data in request.data:
+            keys = group_data.keys()
+            try:
+                group = Group.objects.get(id=group_data.get('id'))
+                if 'course' in keys:
+                    group.course_id = group_data.get('course')
+                if 'group_number' in keys:
+                    group.group_number = group_data.get('group_number')
+                group.save()
+            except:
+                return Response({"text": "incorrect data"}, status=400)
+        return Response(status=204)
 
     @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: GetGroupSerializer(many=True), 400: MessageSerializer()})
     def delete(self, request):
@@ -336,10 +359,10 @@ class AddSubject(APIView):
         result = SubjectSerializer(serialize, many=True).data
         return Response(result)
 
-    @swagger_auto_schema(request_body=PutSubjectSerializer(many=True), responses={204: "", 400: MessageSerializer()})
+    @swagger_auto_schema(request_body=PatchSubjectSerializer(many=True), responses={204: "", 400: MessageSerializer()})
     def patch(self, request):
         institute_id = request.user.institute_id
-        review = PutSubjectSerializer(data=request.data, many=True)
+        review = PatchSubjectSerializer(data=request.data, many=True)
         if not review.is_valid():
             return Response({"text": "incorrect data"}, status=400)
         courses_id = Course.objects.filter(institute_id=institute_id)
@@ -421,10 +444,10 @@ delete:Удалить данные занятий(экземпляров) в м�
         result = DirectorTimeTableSerializer(serialize, many=True).data
         return Response(result)
 
-    @swagger_auto_schema(request_body=PutLessonSerializer(many=True), responses={204: "", 400: MessageSerializer()})
+    @swagger_auto_schema(request_body=PatchLessonSerializer(many=True), responses={204: "", 400: MessageSerializer()})
     def patch(self, request):
         institute_id = request.user.institute_id
-        review = PutLessonSerializer(data=request.data, many=True)
+        review = PatchLessonSerializer(data=request.data, many=True)
         if not review.is_valid():
             return Response({"text": "incorrect data"}, status=400)
         courses = Course.objects.filter(institute_id=institute_id)
@@ -580,8 +603,21 @@ class GetAccount(APIView):
 
 class GetChange(APIView):
     """
-    get: Получить изменения\n
-    Получить изменения
+get: Получить изменения\n
+    type {\n1: \"CANCEL\",\n 2: \"DAY_CHANGE\",\n 3: \"TIME_CHANGE\",\n 4: \"TEACHER_CHANGE\",\n 5: \"FORMAT_CHANGE\"\n}
+    format_change {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
+
+post:Добавление изменений в массиве\n
+    type {\n1: \"CANCEL\",\n 2: \"DAY_CHANGE\",\n 3: \"TIME_CHANGE\",\n 4: \"TEACHER_CHANGE\",\n 5: \"FORMAT_CHANGE\"\n}
+    format_change {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
+
+patch:Обновить изменения в массиве\n
+    type {\n1: \"CANCEL\",\n 2: \"DAY_CHANGE\",\n 3: \"TIME_CHANGE\",\n 4: \"TEACHER_CHANGE\",\n 5: \"FORMAT_CHANGE\"\n}
+    format_change {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
+
+delete:Удалить изменения в массиве\n
+    type {\n1: \"CANCEL\",\n 2: \"DAY_CHANGE\",\n 3: \"TIME_CHANGE\",\n 4: \"TEACHER_CHANGE\",\n 5: \"FORMAT_CHANGE\"\n}
+    format_change {\n1: \"ONLINE_PRACTICE\",\n 2: \"OFFLINE_PRACTICE\",\n 3: \"ONLINE_LECTURE\",\n 4: \"OFFLINE_LECTURE\",\n 5: \"CANCELED\"\n}\n
     """
 
     permission_classes = [IsAuthenticated]
@@ -597,19 +633,81 @@ class GetChange(APIView):
         result = ChangesSerializer(serialize, many=True).data
         return Response(result)
 
-    # @swagger_auto_schema(request_body=ChangesSerializer(many=True), responses={200: ChangesSerializer(many=True), 400: MessageSerializer()})
-    # def post(self, request):
-    #     institute_id = request.user.institute_id
-    #     course = Course.objects.filter(institute_id=institute_id)
-    #     block = Block.objects.filter(course__in=course)
-    #     subject = Subject.objects.filter(block__in=block)
-    #     review = DirectorTimeTableSerializer(data=request.data, many=True)
-    #     if not review.is_valid():
-    #         return Response({"text": "incorrect data"}, status=400)
-    #     review.save()
-    #     serialize = Lesson.objects.filter(subject__in=subject)
-    #     result = DirectorTimeTableSerializer(serialize, many=True).data
-    #     return Response(result)
+    @swagger_auto_schema(request_body=ChangesSerializer(many=True), responses={200: ChangesSerializer(many=True), 400: MessageSerializer()})
+    def post(self, request):
+        institute_id = request.user.institute_id
+        course = Course.objects.filter(institute_id=institute_id)
+        block = Block.objects.filter(course__in=course)
+        subject = Subject.objects.filter(block__in=block)
+        lesson = Lesson.objects.filter(subject__in=subject)
+        review = ChangesSerializer(data=request.data, many=True)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        review.save()
+        serialize = Changes.objects.filter(lesson__in=lesson)
+        result = ChangesSerializer(serialize, many=True).data
+        return Response(result)
+
+    @swagger_auto_schema(request_body=PatchChangeSerializer(many=True), responses={204: "", 400: MessageSerializer()})
+    def patch(self, request):
+        institute_id = request.user.institute_id
+        review = PatchChangeSerializer(data=request.data, many=True)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        courses_id = Course.objects.filter(institute_id=institute_id)
+        blocks = Block.objects.filter(course_id__in=courses_id)
+        subject = Subject.objects.filter(block__in=blocks)
+        lesson = Lesson.objects.filter(subject__in=subject)
+        for changes_data in review.data:
+            if not Changes.objects.filter(id=changes_data.get('id'), lesson__in=lesson).exists():
+                return Response({"text": "Change id does not exist"}, status=400)
+        for changes_data in request.data:
+            keys = changes_data.keys()
+            changes = Changes.objects.get(id=changes_data.get('id'))
+            try:
+                if 'start_date' in keys:
+                    changes.start_date = changes_data.get('start_date')
+                if 'end_date' in keys:
+                    changes.end_date = changes_data.get('end_date')
+                if 'lesson' in keys:
+                    changes.lesson_id = changes_data.get('lesson')
+                if 'type' in keys:
+                    changes.type = changes_data.get('type')
+                if 'day_change' in keys:
+                    changes.day_change = changes_data.get('day_change')
+                if 'time_change_start' in keys:
+                    changes.time_change_start = changes_data.get('time_change_start')
+                if 'time_change_end' in keys:
+                    changes.time_change_end = changes_data.get('time_change_end')
+                if 'teacher_change' in keys:
+                    changes.teacher_change_id = changes_data.get('teacher_change')
+                if 'format_change' in keys:
+                    changes.format_change = changes_data.get('format_change')
+                if 'comment' in keys:
+                    changes.comment = changes_data.get('comment')
+            except:
+                return Response({"text": "incorrect data"}, status=400)
+            changes.save()
+        return Response(status=204)
+
+    @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: ChangesSerializer(many=True), 400: MessageSerializer()})
+    def delete(self, request):
+        institute_id = request.user.institute_id
+        course = Course.objects.filter(institute_id=institute_id)
+        block = Block.objects.filter(course__in=course)
+        subject = Subject.objects.filter(block__in=block)
+        lesson = Lesson.objects.filter(subject__in=subject)
+        review = DeleteSerializer(data=request.data)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for id in review.data.get('id'):
+            if not Changes.objects.filter(id=id, lesson__in=lesson).exists():
+                return Response({"text": "Change id does not exist"}, status=400)
+        for id in review.data.get('id'):
+            Changes.objects.filter(id=id).delete()
+        serialize = Changes.objects.filter(lesson__in=lesson)
+        result = ChangesSerializer(serialize, many=True).data
+        return Response(result)
 
 
 class GetTable(APIView):

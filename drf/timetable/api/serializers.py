@@ -3,8 +3,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.utils.text import gettext_lazy as _
 
 from .models import Institute, University, Group, Block, Subject, Teacher, Lesson, Course, Director, Changes, days, \
-    lesson_type, even_week
-
+    lesson_type, even_week, change_type
 
 
 # University
@@ -34,7 +33,6 @@ class GetFullInstituteSerializer(serializers.ModelSerializer):
     depth = 1
 
 
-
 # Group
 
 class GetGroupSerializer(serializers.ModelSerializer):
@@ -49,6 +47,15 @@ class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
         fields = "__all__"
+
+class PatchGroupSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    course = serializers.IntegerField(required=False)
+    group_number = serializers.CharField(required=False)
+
+    class Meta:
+        model = Group
+        fields = ["id", "course", "group_number"]
 
 
 # Block
@@ -82,7 +89,7 @@ class SubjectSerializer(serializers.ModelSerializer):
         model = Subject
         fields = ["id", "name", "block_id"]
 
-class PutSubjectSerializer(serializers.ModelSerializer):
+class PatchSubjectSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=True)
     name = serializers.CharField(max_length=50, required=False)
     block_id = serializers.IntegerField(required=False)
@@ -90,8 +97,6 @@ class PutSubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ["id", "name", "block_id"]
-
-
 
 
 # Teacher
@@ -102,15 +107,13 @@ class TeacherSerializer(serializers.ModelSerializer):
         model = Teacher
         fields = ["id", "name", "profile_link", "not_work_from"]
 
-class PutTeacherSerializer(serializers.ModelSerializer):
+class PatchTeacherSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=True)
     name = serializers.CharField(max_length=100, required=False)
 
     class Meta:
         model = Teacher
         fields = ["id", "name", "profile_link", "not_work_from"]
-
-
 
 
 # Lesson
@@ -128,7 +131,7 @@ class DirectorTimeTableSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = "__all__"
 
-class PutLessonSerializer(serializers.ModelSerializer):
+class PatchLessonSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=True)
     day_name = serializers.ChoiceField(choices=days, required=False)
     start_time = serializers.TimeField(required=False)
@@ -146,7 +149,6 @@ class PutLessonSerializer(serializers.ModelSerializer):
         fields = ["id", "day_name", "start_time", "end_time", "type", "is_even_week", "teacher", "subject", "classroom", "group", "links"]
 
 
-
 # Course
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -154,7 +156,6 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = "__all__"
-
 
 
 # Director
@@ -167,7 +168,6 @@ class DirectorSerializer(serializers.ModelSerializer):
         fields = ["username", "first_name", "institute"]
 
 
-
 # Changes
 
 class ChangesSerializer(serializers.ModelSerializer):
@@ -176,6 +176,22 @@ class ChangesSerializer(serializers.ModelSerializer):
         model = Changes
         fields = "__all__"
 
+class PatchChangeSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
+    lesson = serializers.IntegerField(required=True)
+    type = serializers.ChoiceField(choices=change_type, required=True)
+    day_change = serializers.ChoiceField(choices=days, required=False, allow_null=True)
+    time_change_start = serializers.TimeField(required=False, allow_null=True)
+    time_change_end = serializers.TimeField(required=False, allow_null=True)
+    teacher_change = serializers.IntegerField(required=False, allow_null=True)
+    format_change = serializers.ChoiceField(choices=lesson_type, required=False, allow_null=True)
+    comment = serializers.CharField(required=False, allow_null=True)
+
+    class Meta:
+        model = Changes
+        fields = ["id", "start_date", "end_date", "lesson", "type", "day_change", "time_change_start", "time_change_end", "teacher_change", "format_change", "comment"]
 
 
 # Other
