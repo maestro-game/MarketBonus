@@ -213,6 +213,7 @@ class DeleteSerializer(serializers.Serializer):
 class GetTimeTableSerializer(serializers.Serializer):
     group_id = serializers.IntegerField()
     dop_course_id = serializers.ListField(child=serializers.IntegerField(), required=False)
+    is_even_week = serializers.BooleanField()
 
 class DBSerializer(serializers.Serializer):
     courses = CourseSerializer(many=True)

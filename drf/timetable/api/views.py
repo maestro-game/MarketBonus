@@ -49,7 +49,7 @@ class CreateTimeTable(APIView):
             return Response("Timetabe already exists")
         if University.objects.filter(name__iexact=data.get('university_name')).exists():
             univ = University.objects.get(name__iexact=data.get('university_name'))
-            inst = Institute(university=univ, name=data.get('institute_name'), link=data.get('institute_site'),short_name=data.get('institute_short_name'))
+            inst = Institute(university=univ, name=data.get('institute_name'), link=data.get('institute_site'), short_name=data.get('institute_short_name'))
             inst.save()
             director = Director(username=data.get('login'), first_name=data.get('name'),institute=inst)
             director.set_password(data.get('password'))
@@ -523,21 +523,27 @@ class GetTimetable(APIView):
 
     @swagger_auto_schema(request_body=GetTimeTableSerializer(), responses={200: TimeTableSerializer(many=True), 400: MessageSerializer()})
     def post(self, request):
-        review = request.data
-        if not Group.objects.filter(id = review.get("group_id")).exists():
+        review = GetTimeTableSerializer(data=request.data)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        if not Group.objects.filter(id = review.data.get("group_id")).exists():
             return Response({"text": "group does not exists"}, status=400)
-        course_id = Group.objects.get(id = review.get("group_id")).course_id
+        course_id = Group.objects.get(id = review.data.get("group_id")).course_id
         block_id = Block.objects.get(course_id=course_id, name=None).id
         group_subjects = Subject.objects.filter(block_id=block_id)
-        if not review.get("dop_course_id"):
-            serialize = Lesson.objects.filter(group_id=review.get("group_id"), subject__in=group_subjects)
+        if review.data.get("is_even_week"):
+            weeks = [2, 3]
         else:
-            for i in review.get("dop_course_id"):
+            weeks = [1, 3]
+        if not review.data.get("dop_course_id"):
+            serialize = Lesson.objects.filter(group_id=review.data.get("group_id"), subject__in=group_subjects, is_even_week__in=weeks)
+        else:
+            for i in review.data.get("dop_course_id"):
                 if not Subject.objects.filter(id=i).exists():
                     return Response({"text": "extra course does not exists"}, status=400)
 
-            serialize = Lesson.objects.filter(Q(group_id=review.get("group_id"), subject_id__in=review.get("dop_course_id")) |
-                                              Q(group_id=review.get("group_id"), subject__in=group_subjects))
+            serialize = Lesson.objects.filter(Q(group_id=review.data.get("group_id"), subject_id__in=review.data.get("dop_course_id"), is_even_week__in=weeks) |
+                                              Q(group_id=review.data.get("group_id"), subject__in=group_subjects, is_even_week__in=weeks))
 
         for lesson in serialize:
             lesson.is_changed = False
