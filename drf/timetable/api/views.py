@@ -14,7 +14,7 @@ from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, Get
     GroupSerializer, MessageSerializer, BlockSerializer, SubjectSerializer, GetDopCourseSerializer, \
     GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer, ChangesSerializer, \
     DirectorTimeTableSerializer, DBSerializer, RefreshTokenSerializer, DeleteSerializer, PatchTeacherSerializer, \
-    PatchSubjectSerializer, PatchLessonSerializer, PatchGroupSerializer, PatchChangeSerializer
+    PatchSubjectSerializer, PatchLessonSerializer, PatchGroupSerializer, PatchChangeSerializer, EvenWeekSerializer
 
 
 class CreateTimeTable(APIView):
@@ -35,13 +35,8 @@ class CreateTimeTable(APIView):
     @swagger_auto_schema(request_body=CreateTimeTableSerializer(), responses={200: GetFullInstituteSerializer(many=True)})
     def post(self, request):
         review = CreateTimeTableSerializer(data=request.data)
-        if review.is_valid():
-            try:
-                pass
-            except KeyError:
-                return Response({"error": "incorrect data"})
-        else:
-            return Response({"error": "incorrect data"})
+        if not review.is_valid():
+            return Response({"error": "incorrect data"}, status=400)
         data = request.data
         if Director.objects.filter(username=data.get('login')).exists():
             return Response("Account with this name already exist")
@@ -58,7 +53,7 @@ class CreateTimeTable(APIView):
 
         univ = University(name=data.get('university_name'), link=data.get('university_site'), short_name=data.get('university_short_name'))
         univ.save()
-        inst = Institute(university=univ, name=data.get('institute_name'), link=data.get('institute_site'), short_name=data.get('institute_short_name'))
+        inst = Institute(university=univ, name=data.get('institute_name'), link=data.get('institute_site'), short_name=data.get('institute_short_name'), first_sem_start=data.get('first_sem_start'), second_sem_start=data.get('second_sem_start'))
         inst.save()
         director = Director(username=data.get('login'), first_name=data.get('name'),
                             institute=inst)
@@ -513,6 +508,28 @@ delete:Удалить данные занятий(экземпляров) в м�
         return Response(result)
 
 
+class GetCurrentWeek(APIView):
+    """
+    get: Получить четность текущей недели
+    Получить четность текущей недели
+    """
+
+    @swagger_auto_schema(responses={200: EvenWeekSerializer(), 400: MessageSerializer()})
+    def get(self, request, group_id):
+        if not Group.objects.filter(id=group_id).exists():
+            return Response({"text": "Group_id does not exist"}, status=400)
+        cur_week = datetime.now().isocalendar()[1]
+        first_sem_start = Group.objects.get(id=group_id).course.institute.first_sem_start
+        second_sem_start = Group.objects.get(id=group_id).course.institute.second_sem_start
+        if datetime.now().date() < second_sem_start:
+            start = first_sem_start.isocalendar()[1]
+        else:
+            start = second_sem_start.isocalendar()[1]
+        is_even_week = True if ((cur_week - start + 1) % 2 == 0) else False
+        result = {"even_week": is_even_week}
+        return Response(result)
+
+
 class GetTimetable(APIView):
     """
     post:Получить рассписание
@@ -523,6 +540,7 @@ class GetTimetable(APIView):
 
     @swagger_auto_schema(request_body=GetTimeTableSerializer(), responses={200: TimeTableSerializer(many=True), 400: MessageSerializer()})
     def post(self, request):
+        cur_week = datetime.now().isocalendar()[1]
         review = GetTimeTableSerializer(data=request.data)
         if not review.is_valid():
             return Response({"text": "incorrect data"}, status=400)
@@ -531,10 +549,30 @@ class GetTimetable(APIView):
         course_id = Group.objects.get(id = review.data.get("group_id")).course_id
         block_id = Block.objects.get(course_id=course_id, name=None).id
         group_subjects = Subject.objects.filter(block_id=block_id)
-        if review.data.get("is_even_week"):
-            weeks = [2, 3]
+
+        first_sem_start = Group.objects.get(id=review.data.get("group_id")).course.institute.first_sem_start
+        second_sem_start = Group.objects.get(id=review.data.get("group_id")).course.institute.second_sem_start
+        if datetime.now().date() < second_sem_start:
+            start = first_sem_start.isocalendar()[1]
         else:
-            weeks = [1, 3]
+            start = second_sem_start.isocalendar()[1]
+        is_even_week = True if ((cur_week-start+1) % 2 == 0) else False
+        if review.data.get("current_week") == None:
+            if is_even_week:
+                weeks = [2, 3]
+            else:
+                weeks = [1, 3]
+        else:
+            if review.data.get("current_week"):
+                if is_even_week:
+                    weeks = [2, 3]
+                else:
+                    weeks = [1, 3]
+            else:
+                if is_even_week:
+                    weeks = [1, 3]
+                else:
+                    weeks = [2, 3]
         if not review.data.get("dop_course_id"):
             serialize = Lesson.objects.filter(group_id=review.data.get("group_id"), subject__in=group_subjects, is_even_week__in=weeks)
         else:

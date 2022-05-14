@@ -200,12 +200,14 @@ class CreateTimeTableSerializer(serializers.Serializer):
     login = serializers.CharField()
     password = serializers.CharField()
     name = serializers.CharField()
+    first_sem_start = serializers.DateField()
+    second_sem_start = serializers.DateField()
     institute_name = serializers.CharField()
-    institute_short_name = serializers.CharField()
-    institute_site = serializers.CharField()
+    institute_short_name = serializers.CharField(required=False)
+    institute_site = serializers.CharField(required=False)
     university_name = serializers.CharField()
-    university_short_name = serializers.CharField()
-    university_site = serializers.CharField()
+    university_short_name = serializers.CharField(required=False)
+    university_site = serializers.CharField(required=False)
 
 class DeleteSerializer(serializers.Serializer):
     id = serializers.ListField(child=serializers.IntegerField())
@@ -213,7 +215,7 @@ class DeleteSerializer(serializers.Serializer):
 class GetTimeTableSerializer(serializers.Serializer):
     group_id = serializers.IntegerField()
     dop_course_id = serializers.ListField(child=serializers.IntegerField(), required=False)
-    is_even_week = serializers.BooleanField()
+    current_week = serializers.BooleanField(required=False)
 
 class DBSerializer(serializers.Serializer):
     courses = CourseSerializer(many=True)
@@ -226,6 +228,9 @@ class DBSerializer(serializers.Serializer):
 
 class MessageSerializer(serializers.Serializer):
     text = serializers.CharField()
+
+class EvenWeekSerializer(serializers.Serializer):
+    even_week = serializers.BooleanField()
 
 class RefreshTokenSerializer(serializers.Serializer):
     refresh = serializers.CharField()

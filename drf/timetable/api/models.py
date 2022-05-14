@@ -11,6 +11,8 @@ class University(models.Model):
 class Institute(models.Model):
     university = models.ForeignKey(University, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
+    first_sem_start = models.DateField()
+    second_sem_start = models.DateField()
     short_name = models.CharField(max_length=100, null=True, default=None, blank=True)
     link = models.CharField(max_length=300, null=True, default=None, blank=True)
 

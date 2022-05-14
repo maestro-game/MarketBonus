@@ -9,6 +9,7 @@ urlpatterns = [
     path("student/groupByInstId/<int:id>", views.GetGroup.as_view()),
     path("student/blockByGroupId/<int:id>", views.GetBlock.as_view()),
     path("student/dop_courseByBlockId/<int:id>", views.GetDopCourse.as_view()),
+    path("student/currentWeek/<int:group_id>", views.GetCurrentWeek.as_view()),
     path("student/timetable/", views.GetTimetable.as_view()),
     path("dekanat/teacher/", views.AddTeacher.as_view()),
     path("dekanat/group/", views.AddGroup.as_view()),
