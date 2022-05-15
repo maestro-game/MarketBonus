@@ -157,6 +157,21 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = "__all__"
 
+class PostCourseSerializer(serializers.ModelSerializer):
+    course_number = serializers.ListField(child=serializers.IntegerField())
+
+    class Meta:
+        model = Course
+        fields = ['course_number']
+
+class PatchCourseSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    course_number = serializers.IntegerField(required=True)
+
+    class Meta:
+        model = Course
+        fields = ["id", "course_number"]
+
 
 # Director
 

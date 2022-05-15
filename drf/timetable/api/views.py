@@ -14,7 +14,8 @@ from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, Get
     GroupSerializer, MessageSerializer, BlockSerializer, SubjectSerializer, GetDopCourseSerializer, \
     GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer, ChangesSerializer, \
     DirectorTimeTableSerializer, DBSerializer, RefreshTokenSerializer, DeleteSerializer, PatchTeacherSerializer, \
-    PatchSubjectSerializer, PatchLessonSerializer, PatchGroupSerializer, PatchChangeSerializer, EvenWeekSerializer
+    PatchSubjectSerializer, PatchLessonSerializer, PatchGroupSerializer, PatchChangeSerializer, EvenWeekSerializer, \
+    PostCourseSerializer, PatchCourseSerializer
 
 
 class CreateTimeTable(APIView):
@@ -617,6 +618,12 @@ class GetCourse(APIView):
     """
     get:Получить список курсов интитута\n
     Получить список курсов интитута
+    post:Добавление курсов в массиве\n
+    Добавление курсов в массиве
+    patch:Обновить данные курсов в массиве\n
+    Обновить данные курсов в массиве
+    delete:Удалить курсы в массиве\n
+    Удалить курсы в массиве
     """
 
     permission_classes = [IsAuthenticated]
@@ -624,6 +631,51 @@ class GetCourse(APIView):
     @swagger_auto_schema(responses={200: CourseSerializer(many=True), 400: MessageSerializer()})
     def get(self, request):
         institute_id = request.user.institute_id
+        serialize = Course.objects.filter(institute_id=institute_id)
+        result = CourseSerializer(serialize, many=True).data
+        return Response(result)
+
+    @swagger_auto_schema(request_body=PostCourseSerializer(), responses={200: CourseSerializer(many=True), 400: MessageSerializer()})
+    def post(self, request):
+        institute_id = request.user.institute_id
+        review = PostCourseSerializer(data=request.data)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for course_number in review.data.get("course_number"):
+            if Course.objects.filter(institute_id=institute_id, course_number=course_number).exists():
+                return Response({"text": "Course already exist"}, status=400)
+        for course_number in review.data.get("course_number"):
+            Course(institute_id=institute_id, course_number=course_number).save()
+        serialize = Course.objects.filter(institute_id=institute_id)
+        result = CourseSerializer(serialize, many=True).data
+        return Response(result)
+
+    @swagger_auto_schema(request_body=PatchCourseSerializer(many=True), responses={204: "", 400: MessageSerializer()})
+    def patch(self, request):
+        institute_id = request.user.institute_id
+        review = PatchCourseSerializer(data=request.data, many=True)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for course_data in review.data:
+            if not Course.objects.filter(id=course_data.get('id'), institute_id=institute_id).exists():
+                return Response({"text": "Course id does not exist"}, status=400)
+        for course_data in request.data:
+            course = Course.objects.get(id=course_data.get("id"))
+            course.course_number = course_data.get("course_number")
+            course.save()
+        return Response(status=204)
+
+    @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: CourseSerializer(many=True), 400: MessageSerializer()})
+    def delete(self, request):
+        institute_id = request.user.institute_id
+        review = DeleteSerializer(data=request.data)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for id in review.data.get('id'):
+            if not Course.objects.filter(id=id, institute_id=institute_id).exists():
+                return Response({"text": "Course id does not exist"}, status=400)
+        for id in review.data.get('id'):
+            Course.objects.get(id=id).delete()
         serialize = Course.objects.filter(institute_id=institute_id)
         result = CourseSerializer(serialize, many=True).data
         return Response(result)
