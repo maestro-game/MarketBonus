@@ -229,7 +229,7 @@ class DeleteSerializer(serializers.Serializer):
 
 class GetTimeTableSerializer(serializers.Serializer):
     group_id = serializers.IntegerField()
-    dop_course_id = serializers.ListField(child=serializers.IntegerField(), required=False)
+    dop_course_id = serializers.ListField(child=serializers.IntegerField(), required=False, allow_null=True)
     current_week = serializers.BooleanField(required=False)
 
 class DBSerializer(serializers.Serializer):

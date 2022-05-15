@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     path("admin/timetable/", views.CreateTimeTable.as_view()),
-    path("student/university/", views.GetUniversity.as_view()),
+    path("student/university/", views.GetUniversity.as_view(), name="university"),
     path("student/instByUnivid/<int:id>", views.GetInstitute.as_view()),
     path("student/groupByInstId/<int:id>", views.GetGroup.as_view()),
     path("student/blockByGroupId/<int:id>", views.GetBlock.as_view()),
@@ -21,5 +21,5 @@ urlpatterns = [
     path("dekanat/table/", views.GetTable.as_view()),
     path("dekanat/change/", views.GetChange.as_view()),
     path("token/logout/", views.LogoutView.as_view()),
-# редактирование и удаление блоков, изменений
+# редактирование и удаление блоков
 ]
