@@ -109,6 +109,12 @@ class PatchSubjectSerializer(serializers.ModelSerializer):
 
 # Teacher
 
+class AllTeacherSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Teacher
+        fields = "__all__"
+
 class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -128,6 +134,23 @@ class PatchTeacherSerializer(serializers.ModelSerializer):
 
 class TimeTableSerializer(serializers.ModelSerializer):
     is_changed = serializers.BooleanField(required=True)
+    teacher = serializers.CharField(required=True)
+    subject = serializers.CharField(required=True)
+
+    def to_representation(self, instance):
+        result = {"id": instance.id,
+             "day_name": instance.day_name,
+             "start_time": instance.start_time,
+             "end_time": instance.end_time,
+             "type": instance.type,
+             "is_even_week": instance.is_even_week,
+             "teacher": instance.teacher.name,
+             "subject": instance.subject.name,
+             "classroom": instance.classroom,
+             "group": instance.group.id,
+             "links": instance.links,
+             "is_changed": instance.is_changed}
+        return result
 
     class Meta:
         model = Lesson
