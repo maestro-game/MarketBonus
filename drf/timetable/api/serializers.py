@@ -73,6 +73,14 @@ class BlockSerializer(serializers.ModelSerializer):
         model = Block
         fields = ["id", "name", "course_id"]
 
+class PatchBlockSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    name = serializers.CharField(required=True)
+
+    class Meta:
+        model = Group
+        fields = ["id", "name"]
+
 
 # Subject
 

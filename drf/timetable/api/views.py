@@ -15,7 +15,7 @@ from .serializers import CreateTimeTableSerializer, GetUniversitySerializer, Get
     GetTimeTableSerializer, TimeTableSerializer, CourseSerializer, DirectorSerializer, ChangesSerializer, \
     DirectorTimeTableSerializer, DBSerializer, RefreshTokenSerializer, DeleteSerializer, PatchTeacherSerializer, \
     PatchSubjectSerializer, PatchLessonSerializer, PatchGroupSerializer, PatchChangeSerializer, EvenWeekSerializer, \
-    PostCourseSerializer, PatchCourseSerializer
+    PostCourseSerializer, PatchCourseSerializer, PatchBlockSerializer
 
 
 class CreateTimeTable(APIView):
@@ -287,8 +287,12 @@ class AddBlock(APIView):
     """
     get:Список всех блоков интитута\n
     Список всех блоков интитута
-    post:Добавление доп курсов в массиве\n
-    Добавление доп курсов в массиве
+    post:Добавление учебных блоков в массиве\n
+    Добавление учебных блоков в массиве
+    patch:Обновление учебных блоков в массиве\n
+    Обновление учебных блоков в массиве
+    delete:Удаление учебных блоков в массиве\n
+    Удаление учебных блоков в массиве
     """
     permission_classes = [IsAuthenticated]
 
@@ -312,6 +316,38 @@ class AddBlock(APIView):
             Block.objects.update_or_create(course=Course.objects.get(institute_id=institute_id, id=i.get("course_id")), name=i.get("name"))
         serialize = Block.objects.filter(course__in=Course.objects.filter(institute_id=institute_id)).distinct('id').exclude(name__isnull=True)
         result = BlockSerializer(serialize, many=True).data
+        return Response(result)
+
+    @swagger_auto_schema(request_body=PatchBlockSerializer(many=True), responses={204: "", 400: MessageSerializer()})
+    def patch(self, request):
+        institute_id = request.user.institute_id
+        review = PatchBlockSerializer(data=request.data, many=True)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        courses = Course.objects.filter(institute_id=institute_id)
+        for block_data in review.data:
+            if not Block.objects.filter(id=block_data.get('id'), course__in=courses).exists():
+                return Response({"text": "Block id does not exist"}, status=400)
+        for block_data in request.data:
+            block = Block.objects.get(id=block_data.get('id'))
+            block.name = block_data.get("name")
+            block.save()
+        return Response(status=204)
+
+    @swagger_auto_schema(request_body=DeleteSerializer(), responses={200: GetBlockSerializer(many=True), 400: MessageSerializer()})
+    def delete(self, request):
+        institute_id = request.user.institute_id
+        courses = Course.objects.filter(institute_id=institute_id)
+        review = DeleteSerializer(data=request.data)
+        if not review.is_valid():
+            return Response({"text": "incorrect data"}, status=400)
+        for id in review.data.get('id'):
+            if not Block.objects.filter(id=id, course__in=courses).exists():
+                return Response({"text": "Block id does not exist"}, status=400)
+        for id in review.data.get('id'):
+            Block.objects.filter(id=id).delete()
+        serialize = Block.objects.filter(course__in=courses)
+        result = GetBlockSerializer(serialize, many=True).data
         return Response(result)
 
 
@@ -511,7 +547,7 @@ delete:Удалить данные занятий(экземпляров) в м�
 
 class GetCurrentWeek(APIView):
     """
-    get: Получить четность текущей недели
+    get: Получить четность текущей недели\n
     Получить четность текущей недели
     """
 
