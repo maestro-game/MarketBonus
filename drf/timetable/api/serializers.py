@@ -173,7 +173,7 @@ class PatchLessonSerializer(serializers.ModelSerializer):
     subject = serializers.IntegerField(required=False)
     classroom = serializers.CharField(max_length=100, allow_null=True, required=False)
     group = serializers.IntegerField(required=False)
-    links = serializers.ListField(child=serializers.CharField(max_length=200), required=False)
+    links = serializers.ListField(child=serializers.CharField(max_length=200), required=False, allow_null=True)
 
     class Meta:
         model = Lesson
