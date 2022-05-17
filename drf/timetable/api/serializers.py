@@ -140,8 +140,8 @@ class TimeTableSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         result = {"id": instance.id,
              "day_name": instance.day_name,
-             "start_time": instance.start_time,
-             "end_time": instance.end_time,
+             "start_time": instance.start_time.strftime("%H:%M"),
+             "end_time": instance.end_time.strftime("%H:%M"),
              "type": instance.type,
              "is_even_week": instance.is_even_week,
              "teacher": instance.teacher.name,
