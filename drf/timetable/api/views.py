@@ -681,7 +681,9 @@ class GetCourse(APIView):
             if Course.objects.filter(institute_id=institute_id, course_number=course_number).exists():
                 return Response({"text": "Course already exist"}, status=400)
         for course_number in review.data.get("course_number"):
-            Course(institute_id=institute_id, course_number=course_number).save()
+            course = Course(institute_id=institute_id, course_number=course_number)
+            course.save()
+            Block.objects.update_or_create(course=course, name=None)
         serialize = Course.objects.filter(institute_id=institute_id)
         result = CourseSerializer(serialize, many=True).data
         return Response(result)
