@@ -11,7 +11,7 @@ urlpatterns = [
     path("student/dop_courseByBlockId/<int:id>", views.GetDopCourse.as_view()),
     path("student/currentWeek/<int:group_id>", views.GetCurrentWeek.as_view()),
     path("student/timetable/", views.GetTimetable.as_view()),
-    path("dekanat/teacher/", views.AddTeacher.as_view()),
+    path("dekanat/teacher/", views.AddTeacher.as_view(), name="teacher"),
     path("dekanat/group/", views.AddGroup.as_view()),
     path("dekanat/block/", views.AddBlock.as_view()),
     path("dekanat/subject/", views.AddSubject.as_view()),
@@ -21,5 +21,4 @@ urlpatterns = [
     path("dekanat/table/", views.GetTable.as_view()),
     path("dekanat/change/", views.GetChange.as_view()),
     path("token/logout/", views.LogoutView.as_view()),
-# редактирование и удаление блоков
 ]
